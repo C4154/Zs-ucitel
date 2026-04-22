@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Školní testy</title>
+    <title>Školní testy – Učitelka</title>
     
-    <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDocs, addDoc, deleteDoc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
         const firebaseConfig = {
@@ -22,11 +22,12 @@
         try {
             const app = initializeApp(firebaseConfig);
             window.db = getFirestore(app);
-            window.firebaseOK = true;
-            console.log("Firebase připojeno");
+            window.auth = getAuth(app);
+            window.fbReady = true;
+            console.log("Firebase OK");
         } catch(e) {
-            console.log("Firebase offline:", e);
-            window.firebaseOK = false;
+            console.error("Firebase chyba:", e);
+            window.fbReady = false;
         }
     </script>
 
@@ -45,7 +46,6 @@
             --radius: 12px;
             --shadow: 0 2px 12px rgba(0,0,0,0.08);
         }
-
         [data-theme="dark"] {
             --bg: #0f0f1a;
             --paper: #1a1a2e;
@@ -53,10 +53,8 @@
             --muted: #a0a0a0;
             --border: #2d2d44;
             --primary: #4895ef;
-            --primary-light: #4cc9f0;
             --shadow: 0 2px 12px rgba(0,0,0,0.3);
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -66,13 +64,7 @@
             font-size: 16px;
             transition: background 0.3s, color 0.3s;
         }
-
-        .wrap {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px 16px;
-        }
-
+        .wrap { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
         .header {
             display: flex;
             justify-content: space-between;
@@ -81,20 +73,13 @@
             padding-bottom: 16px;
             border-bottom: 1px solid var(--border);
         }
-        .header h1 {
-            font-size: 1.4rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
+        .header h1 { font-size: 1.4rem; font-weight: 800; }
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 14px 20px;
+            padding: 12px 20px;
             border: none;
             border-radius: var(--radius);
             font-size: 1rem;
@@ -109,14 +94,8 @@
         .btn-red { background: var(--danger); color: #fff; }
         .btn-yellow { background: var(--warning); color: #fff; }
         .btn-gray { background: var(--bg); color: var(--text); border: 2px solid var(--border); }
-
-        .btn-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 16px;
-        }
+        .btn-row { display: flex; gap: 10px; margin-top: 16px; }
         .btn-row .btn { width: auto; flex: 1; }
-
         .box {
             background: var(--paper);
             border-radius: var(--radius);
@@ -124,15 +103,9 @@
             border: 1px solid var(--border);
             padding: 24px;
             margin-bottom: 16px;
-            transition: background 0.3s, border-color 0.3s;
+            transition: all 0.3s;
         }
-
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 6px;
-            font-size: 0.9rem;
-        }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; }
         input, select, textarea {
             width: 100%;
             padding: 12px 14px;
@@ -142,162 +115,9 @@
             font-family: inherit;
             background: var(--paper);
             color: var(--text);
-            transition: all 0.2s;
         }
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
         .field { margin-bottom: 16px; }
-
-        .big-choice {
-            display: block;
-            width: 100%;
-            padding: 28px 24px;
-            margin-bottom: 12px;
-            background: var(--paper);
-            border: 2px solid var(--border);
-            border-radius: var(--radius);
-            font-size: 1.2rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-align: left;
-            transition: all .15s;
-        }
-        .big-choice:hover {
-            border-color: var(--primary);
-            background: rgba(67, 97, 238, 0.05);
-        }
-        .big-choice .sub {
-            display: block;
-            font-size: 0.9rem;
-            font-weight: 400;
-            color: var(--muted);
-            margin-top: 4px;
-        }
-
-        .cat-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .cat-card {
-            padding: 20px 12px;
-            background: var(--paper);
-            border: 2px solid var(--border);
-            border-radius: var(--radius);
-            text-align: center;
-            cursor: pointer;
-            transition: all .15s;
-        }
-        .cat-card:hover { border-color: var(--primary); }
-        .cat-card.active {
-            border-color: var(--primary);
-            background: rgba(67, 97, 238, 0.1);
-        }
-        .cat-card .emoji { font-size: 2.2rem; margin-bottom: 8px; }
-        .cat-card .name { font-weight: 700; font-size: 0.95rem; }
-        .cat-card .count { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
-
-        .test-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 18px;
-            background: var(--paper);
-            border: 2px solid var(--border);
-            border-radius: var(--radius);
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: all .15s;
-        }
-        .test-item:hover {
-            border-color: var(--primary);
-            box-shadow: var(--shadow);
-        }
-        .test-item .title { font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; }
-        .test-item .meta { font-size: 0.85rem; color: var(--muted); }
-
-        .progress {
-            height: 8px;
-            background: var(--border);
-            border-radius: 4px;
-            margin-bottom: 24px;
-            overflow: hidden;
-        }
-        .progress > div {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--primary-light));
-            transition: width .3s;
-        }
-        .question-num {
-            font-size: 0.8rem;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-        .question-text {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 24px;
-            line-height: 1.4;
-        }
-        .option {
-            display: block;
-            width: 100%;
-            padding: 18px;
-            margin-bottom: 10px;
-            background: var(--paper);
-            border: 2px solid var(--border);
-            border-radius: var(--radius);
-            font-size: 1.1rem;
-            cursor: pointer;
-            text-align: left;
-            transition: all .15s;
-        }
-        .option:hover { border-color: var(--primary-light); }
-        .option.picked {
-            border-color: var(--primary);
-            background: rgba(67, 97, 238, 0.08);
-            font-weight: 600;
-        }
-
-        .result-circle {
-            width: 160px;
-            height: 160px;
-            border-radius: 50%;
-            border: 8px solid var(--success);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 24px;
-        }
-        .result-percent {
-            font-size: 3rem;
-            font-weight: 800;
-            color: var(--text);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.95rem;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-        th {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: var(--muted);
-            font-weight: 700;
-        }
-
         .tag {
             display: inline-block;
             padding: 4px 12px;
@@ -310,7 +130,9 @@
         }
         .tag.blue { background: #e3f2fd; color: #1565c0; }
         .tag.green { background: #e8f5e9; color: #2e7d32; }
-
+        table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { font-size: 0.75rem; text-transform: uppercase; color: var(--muted); font-weight: 700; }
         .q-block {
             border: 2px solid var(--border);
             border-radius: var(--radius);
@@ -318,22 +140,9 @@
             margin-bottom: 12px;
             background: rgba(0,0,0,0.02);
         }
-        .opt-line {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-        .opt-line input[type="radio"] {
-            width: 20px;
-            height: 20px;
-            accent-color: var(--primary);
-        }
-        .opt-line input[type="text"] {
-            flex: 1;
-            margin-bottom: 0;
-        }
-
+        .opt-line { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .opt-line input[type="radio"] { width: 20px; height: 20px; accent-color: var(--primary); }
+        .opt-line input[type="text"] { flex: 1; margin-bottom: 0; }
         .cat-manage {
             display: flex;
             align-items: center;
@@ -345,7 +154,6 @@
         }
         .cat-manage input { margin-bottom: 0; }
         .cat-manage .btn { width: auto; padding: 8px 16px; }
-
         .theme-btn {
             background: var(--paper);
             border: 2px solid var(--border);
@@ -357,240 +165,332 @@
             justify-content: center;
             cursor: pointer;
             font-size: 1.3rem;
-            transition: all 0.3s;
         }
-
         .hide { display: none !important; }
         .center { text-align: center; }
         .small { font-size: 0.9rem; color: var(--muted); }
-        .mb1 { margin-bottom: 8px; }
-        .mb2 { margin-bottom: 16px; }
-        .mt1 { margin-top: 8px; }
         .mt2 { margin-top: 16px; }
-
-        @media (max-width: 480px) {
-            .btn-row { flex-direction: column; }
-            .cat-grid { grid-template-columns: repeat(2, 1fr); }
-            .question-text { font-size: 1.1rem; }
-        }
+        @media (max-width: 480px) { .btn-row { flex-direction: column; } }
     </style>
 </head>
 <body>
 
 <div class="wrap">
-
     <div class="header">
-        <h1>🎓 Školní testy</h1>
-        <button class="theme-btn" onclick="toggleTheme()" title="Přepnout režim">🌓</button>
+        <h1>👩‍🏫 Školní testy</h1>
+        <button class="theme-btn" onclick="toggleTheme()">🌓</button>
     </div>
 
-    <!-- ÚVOD -->
-    <div id="page-home">
-        <button class="big-choice" onclick="go('student-cats')">
-            👨‍🎓 Jsem žák
-            <span class="sub">Rovnou do procvičování bez přihlašování</span>
-        </button>
-        <button class="big-choice" onclick="go('teacher-pin')">
-            👩‍🏫 Jsem učitelka
-            <span class="sub">Správa testů, kategorií a výsledků</span>
-        </button>
-    </div>
-
-    <!-- ŽÁK: KATEGORIE -->
-    <div id="page-student-cats" class="hide">
-        <div class="center mb2">
-            <h2>Vyber předmět</h2>
-            <p class="small">Klikni na předmět a zobrazí se dostupné testy</p>
-        </div>
-        <div class="cat-grid" id="student-cat-grid"></div>
-        <button class="btn btn-gray" onclick="go('home')">Zpět</button>
-    </div>
-
-    <!-- ŽÁK: TESTY -->
-    <div id="page-student-list" class="hide">
-        <div class="center mb2">
-            <h2 id="student-cat-title">Testy</h2>
-            <p class="small" id="student-cat-sub"></p>
-        </div>
-        <div id="student-tests"></div>
-        <button class="btn btn-gray mt2" onclick="go('student-cats')">← Zpět na předměty</button>
-    </div>
-
-    <!-- ŽÁK: TEST -->
-    <div id="page-student-test" class="hide">
-        <div class="progress"><div id="test-progress" style="width:0%"></div></div>
+    <!-- LOGIN -->
+    <div id="page-login">
         <div class="box">
-            <div class="question-num">Otázka <span id="q-current">1</span> / <span id="q-total">5</span></div>
-            <div class="question-text" id="q-text"></div>
-            <div id="q-options"></div>
-        </div>
-        <div class="btn-row">
-            <button class="btn btn-gray" onclick="testPrev()" id="btn-prev">← Předchozí</button>
-            <button class="btn btn-blue" onclick="testNext()" id="btn-next">Další →</button>
-        </div>
-    </div>
-
-    <!-- ŽÁK: VÝSLEDEK -->
-    <div id="page-student-result" class="hide">
-        <div class="box center">
-            <div class="result-circle">
-                <div class="result-percent" id="res-percent">0%</div>
-            </div>
-            <div style="font-size:1.15rem;">
-                <strong id="res-count">0 / 0</strong> správně
-            </div>
-            <p class="small mt2" id="res-msg"></p>
-        </div>
-        <div class="box">
-            <h3 class="mb1">Srovnání s ostatními</h3>
-            <p>Průměr všech žáků: <strong id="res-avg">-</strong></p>
-            <p class="small mt1" id="res-compare"></p>
-        </div>
-        <button class="btn btn-blue mt2" onclick="go('student-cats')">Vybrat další test</button>
-    </div>
-
-    <!-- UČITELKA: PIN -->
-    <div id="page-teacher-pin" class="hide">
-        <div class="center mb2">
-            <h2>👩‍🏫 Přístup pro učitelku</h2>
-            <p class="small">Zadej PIN (výchozí: 1234)</p>
-        </div>
-        <div class="box">
+            <h2 class="center mb2">Přihlášení učitelky</h2>
             <div class="field">
-                <input type="password" id="inp-pin" placeholder="PIN" maxlength="4" inputmode="numeric">
+                <label>Email</label>
+                <input type="email" id="login-email" placeholder="vas@email.cz">
             </div>
-            <button class="btn btn-blue" onclick="teacherLogin()">Přihlásit</button>
-            <button class="btn btn-gray mt2" onclick="go('home')">Zpět</button>
+            <div class="field">
+                <label>Heslo</label>
+                <input type="password" id="login-pass" placeholder="Heslo">
+            </div>
+            <button class="btn btn-blue" onclick="login()">Přihlásit se</button>
+            <p class="center small mt2">
+                Nemáte účet? <a href="#" onclick="showReg()" style="color:var(--primary);">Zaregistrovat se</a>
+            </p>
         </div>
     </div>
 
-    <!-- UČITELKA: DASHBOARD -->
-    <div id="page-teacher-dash" class="hide">
+    <!-- REGISTRACE -->
+    <div id="page-reg" class="hide">
+        <div class="box">
+            <h2 class="center mb2">Nový účet učitelky</h2>
+            <div class="field">
+                <label>Email</label>
+                <input type="email" id="reg-email" placeholder="vas@email.cz">
+            </div>
+            <div class="field">
+                <label>Heslo (min. 6 znaků)</label>
+                <input type="password" id="reg-pass" placeholder="Heslo">
+            </div>
+            <button class="btn btn-green" onclick="register()">Vytvořit účet</button>
+            <button class="btn btn-gray mt2" onclick="showLogin()">Zpět na přihlášení</button>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="page-dash" class="hide">
         <div class="center mb2">
             <h2>Učitelský přehled</h2>
-            <p class="small" id="teacher-stats"></p>
+            <p class="small" id="dash-stats"></p>
         </div>
         <div class="btn-row mb2">
-            <button class="btn btn-green" onclick="go('teacher-new')">+ Nový test</button>
-            <button class="btn btn-yellow" onclick="go('teacher-cats')">Kategorie</button>
-            <button class="btn btn-gray" onclick="logoutTeacher()">Odhlásit</button>
+            <button class="btn btn-green" onclick="go('new')">+ Nový test</button>
+            <button class="btn btn-yellow" onclick="go('cats')">Kategorie</button>
+            <button class="btn btn-gray" onclick="logout()">Odhlásit</button>
         </div>
-        <div id="teacher-tests"></div>
+        <div id="dash-tests"></div>
     </div>
 
-    <!-- UČITELKA: KATEGORIE -->
-    <div id="page-teacher-cats" class="hide">
+    <!-- KATEGORIE -->
+    <div id="page-cats" class="hide">
         <div class="center mb2">
             <h2>Správa kategorií</h2>
-            <p class="small">Přidej nebo smaž předměty a třídy</p>
         </div>
-        
         <div class="box">
             <h3 class="mb2">Předměty</h3>
-            <div id="cat-subjects"></div>
+            <div id="list-subjects"></div>
             <div class="cat-manage mt2">
-                <input type="text" id="new-subject" placeholder="Název předmětu" style="flex:2;">
-                <input type="text" id="new-subject-emoji" placeholder="Emoji" style="width:70px;">
-                <button class="btn btn-blue" onclick="addCategory('subject')">+</button>
+                <input type="text" id="new-subject" placeholder="Název" style="flex:2;">
+                <input type="text" id="new-emoji" placeholder="Emoji" style="width:70px;">
+                <button class="btn btn-blue" onclick="addCat('subject')">+</button>
             </div>
         </div>
-
         <div class="box">
-            <h3 class="mb2">Třídy / skupiny</h3>
-            <div id="cat-classes"></div>
+            <h3 class="mb2">Třídy</h3>
+            <div id="list-classes"></div>
             <div class="cat-manage mt2">
                 <input type="text" id="new-class" placeholder="např. 6. A" style="flex:1;">
-                <button class="btn btn-blue" onclick="addCategory('class')">+</button>
+                <button class="btn btn-blue" onclick="addCat('class')">+</button>
             </div>
         </div>
-
-        <button class="btn btn-gray mt2" onclick="go('teacher-dash')">← Zpět</button>
+        <button class="btn btn-gray mt2" onclick="go('dash')">← Zpět</button>
     </div>
 
-    <!-- UČITELKA: EDITOR -->
-    <div id="page-teacher-new" class="hide">
-        <div class="center mb2">
-            <h2 id="new-title">Nový test</h2>
-        </div>
+    <!-- EDITOR -->
+    <div id="page-new" class="hide">
+        <div class="center mb2"><h2 id="ed-title">Nový test</h2></div>
         <div class="box">
             <div class="field">
                 <label>Název testu</label>
-                <input type="text" id="new-name" placeholder="např. Základy geometrie">
+                <input type="text" id="ed-name" placeholder="např. Základy geometrie">
             </div>
             <div class="field">
                 <label>Předmět</label>
-                <select id="new-subject"></select>
+                <select id="ed-subject"></select>
             </div>
             <div class="field">
                 <label>Třída</label>
-                <select id="new-class"></select>
+                <select id="ed-class"></select>
             </div>
             <div class="field">
-                <label>
-                    <input type="checkbox" id="new-shuffle" style="width:auto;margin-right:8px;">
-                    Zamíchat otázky pro každého žáka
-                </label>
+                <label><input type="checkbox" id="ed-shuffle" style="width:auto;margin-right:8px;"> Zamíchat otázky</label>
             </div>
         </div>
-
         <div class="box">
             <h3 class="mb2">Otázky</h3>
-            <div id="new-questions"></div>
-            <button class="btn btn-yellow mt2" onclick="addQuestion()">+ Přidat otázku</button>
+            <div id="ed-questions"></div>
+            <button class="btn btn-yellow mt2" onclick="addQ()">+ Přidat otázku</button>
         </div>
-
         <div class="btn-row mt2">
-            <button class="btn btn-green" onclick="saveTest()">Uložit test</button>
-            <button class="btn btn-gray" onclick="go('teacher-dash')">Zrušit</button>
+            <button class="btn btn-green" onclick="saveTest()">Uložit</button>
+            <button class="btn btn-gray" onclick="go('dash')">Zrušit</button>
         </div>
     </div>
 
-    <!-- UČITELKA: VÝSLEDKY -->
-    <div id="page-teacher-results" class="hide">
-        <div class="center mb2">
-            <h2 id="res-title">Výsledky</h2>
-        </div>
+    <!-- VÝSLEDKY -->
+    <div id="page-res" class="hide">
+        <div class="center mb2"><h2 id="res-title">Výsledky</h2></div>
         <div class="box" style="overflow-x:auto;">
             <table>
-                <thead>
-                    <tr><th>Žák</th><th>Skóre</th><th>Datum</th></tr>
-                </thead>
+                <thead><tr><th>Žák</th><th>Skóre</th><th>Datum</th></tr></thead>
                 <tbody id="res-tbody"></tbody>
             </table>
             <p class="center small mt2 hide" id="res-empty">Zatím žádné výsledky.</p>
         </div>
-        <button class="btn btn-gray mt2" onclick="go('teacher-dash')">Zpět</button>
+        <button class="btn btn-gray mt2" onclick="go('dash')">Zpět</button>
     </div>
-
 </div>
 
 <script>
-/* =========================
-   FIREBASE + LOCAL STORAGE
-   ========================= */
-const Store = {
-    key: 'skolni_testy_v4',
-    load() {
-        try { return JSON.parse(localStorage.getItem(this.key)) || {}; }
-        catch(e) { return {}; }
-    },
-    save(data) { localStorage.setItem(this.key, JSON.stringify(data)); },
-    
+const LS = {
+    key: 'st_ucitel',
+    load() { try { return JSON.parse(localStorage.getItem(this.key)) || {}; } catch(e) { return {}; } },
+    save(d) { localStorage.setItem(this.key, JSON.stringify(d)); },
     getSubjects() { return this.load().subjects || []; },
     setSubjects(s) { const d=this.load(); d.subjects=s; this.save(d); },
     getClasses() { return this.load().classes || []; },
     setClasses(c) { const d=this.load(); d.classes=c; this.save(d); },
     getTests() { return this.load().tests || []; },
     setTests(t) { const d=this.load(); d.tests=t; this.save(d); },
-    addTest(t) { const tests=this.getTests(); tests.push(t); this.setTests(tests); },
-    updateTest(id, data) {
-        const tests = this.getTests().map(t => t.id===id ? {...t, ...data} : t);
-        this.setTests(tests);
-    },
-    deleteTest(id) { this.setTests(this.getTests().filter(t => t.id!==id)); },
-    getResults() { return this.load().results || []; },
-    addResult(r) { const d=this.load(); d.results=d.results||[]; d.results.push(r); this.save(d); }
+    addTest(t) { const ts=this.getTests(); ts.push(t); this.setTests(ts); },
+    updateTest(id, data) { this.setTests(this.getTests().map(t=>t.id===id?{...t,...data}:t)); },
+    deleteTest(id) { this.setTests(this.getTests().filter(t=>t.id!==id)); },
+    getResults() { return this.load().results || []; }
 };
 
 const FB = {
-    async loadAll() 
+    async sync() {
+        if (!window.fbReady || !window.db) return;
+        try {
+            const [subSnap, clsSnap, testSnap, resSnap] = await Promise.all([
+                getDocs(collection(window.db, 'subjects')),
+                getDocs(collection(window.db, 'classes')),
+                getDocs(query(collection(window.db, 'tests'), orderBy('createdAt', 'desc'))),
+                getDocs(query(collection(window.db, 'results'), orderBy('date', 'desc')))
+            ]);
+            const subs = subSnap.docs.map(d => ({id:d.id, ...d.data()}));
+            const cls = clsSnap.docs.map(d => d.data().name);
+            const tests = testSnap.docs.map(d => ({id:d.id, ...d.data()}));
+            const res = resSnap.docs.map(d => ({id:d.id, ...d.data()}));
+            if (subs.length) LS.setSubjects(subs);
+            if (cls.length) LS.setClasses(cls);
+            if (tests.length) LS.setTests(tests);
+            const d = LS.load(); d.results = res.length ? res : (d.results||[]); LS.save(d);
+        } catch(e) { console.error(e); }
+    },
+    async save(col, id, data) {
+        if (!window.fbReady || !window.db) return;
+        try { await setDoc(doc(window.db, col, id), data); } catch(e) {}
+    },
+    async add(col, data) {
+        if (!window.fbReady || !window.db) return;
+        try { return await addDoc(collection(window.db, col), data); } catch(e) { return null; }
+    },
+    async del(col, id) {
+        if (!window.fbReady || !window.db) return;
+        try { await deleteDoc(doc(window.db, col, id)); } catch(e) {}
+    }
+};
+
+function seed() {
+    if (LS.getSubjects().length > 0) return;
+    LS.setSubjects([
+        {id:'mat', name:'Matematika', emoji:'📐'},
+        {id:'cest', name:'Čeština', emoji:'📚'},
+        {id:'ang', name:'Angličtina', emoji:'🌍'},
+        {id:'prir', name:'Přírodopis', emoji:'🔬'},
+        {id:'dej', name:'Dějepis', emoji:'🏛️'}
+    ]);
+    LS.setClasses(['5. A','5. B','6. A','6. B','7. A','7. B','8. A','8. B','9. A','9. B']);
+}
+
+function toggleTheme() {
+    const h = document.documentElement;
+    h.setAttribute('data-theme', h.getAttribute('data-theme')==='light'?'dark':'light');
+    localStorage.setItem('theme', h.getAttribute('data-theme'));
+}
+(function(){ const t=localStorage.getItem('theme')||'light'; document.documentElement.setAttribute('data-theme',t); })();
+
+function go(p) {
+    document.querySelectorAll('[id^="page-"]').forEach(e=>e.classList.add('hide'));
+    document.getElementById('page-'+p).classList.remove('hide');
+    window.scrollTo(0,0);
+    if (p==='dash') renderDash();
+    if (p==='cats') renderCats();
+    if (p==='new') initEditor();
+}
+
+function showReg() { go('reg'); }
+function showLogin() { go('login'); }
+
+async function login() {
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-pass').value;
+    if (!window.auth) { alert('Firebase Auth není dostupné.'); return; }
+    try {
+        await signInWithEmailAndPassword(window.auth, email, pass);
+    } catch(e) { alert('Chyba: '+e.message); }
+}
+
+async function register() {
+    const email = document.getElementById('reg-email').value;
+    const pass = document.getElementById('reg-pass').value;
+    if (!window.auth) { alert('Firebase Auth není dostupné.'); return; }
+    try {
+        await createUserWithEmailAndPassword(window.auth, email, pass);
+        alert('Účet vytvořen! Nyní se přihlaš.');
+        showLogin();
+    } catch(e) { alert('Chyba: '+e.message); }
+}
+
+function logout() {
+    if (window.auth) signOut(window.auth);
+    go('login');
+}
+
+if (window.auth) {
+    onAuthStateChanged(window.auth, user => {
+        if (user) go('dash');
+        else go('login');
+    });
+}
+
+function renderDash() {
+    const tests = LS.getTests();
+    const results = LS.getResults();
+    document.getElementById('dash-stats').textContent = `${tests.length} testů • ${results.length} vyplnění`;
+    document.getElementById('dash-tests').innerHTML = tests.length ? tests.map(t => {
+        const res = results.filter(r=>r.testId===t.id);
+        const avg = res.length ? Math.round(res.reduce((a,b)=>a+b.score,0)/res.length) : '-';
+        return `<div class="box" style="padding:18px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                    <div style="font-weight:700;font-size:1.1rem;">${t.title}</div>
+                    <div class="small mt2">
+                        <span class="tag blue">${t.subjectName||t.subject}</span>
+                        <span class="tag">${t.class}</span>
+                        <span class="tag green">${t.questions.length} otázek</span>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:1.3rem;font-weight:800;color:var(--primary);">${avg}${avg!=='-'?'%':''}</div>
+                    <div class="small">průměr</div>
+                </div>
+            </div>
+            <div class="btn-row" style="margin-top:14px;">
+                <button class="btn btn-blue" style="flex:1;" onclick="editTest('${t.id}')">Upravit</button>
+                <button class="btn btn-yellow" style="flex:1;" onclick="viewRes('${t.id}')">Výsledky</button>
+                <button class="btn btn-red" style="flex:0 0 auto;" onclick="delTest('${t.id}')">🗑</button>
+            </div>
+        </div>`;
+    }).join('') : '<p class="center small">Zatím žádný test.</p>';
+}
+
+async function delTest(id) {
+    if (!confirm('Smazat?')) return;
+    LS.deleteTest(id);
+    await FB.del('tests', id);
+    renderDash();
+}
+
+function renderCats() {
+    const subs = LS.getSubjects();
+    const cls = LS.getClasses();
+    document.getElementById('list-subjects').innerHTML = subs.map((s,i) => `
+        <div class="cat-manage">
+            <span style="font-size:1.3rem;">${s.emoji||'📖'}</span>
+            <span style="flex:1;font-weight:600;">${s.name}</span>
+            <button class="btn btn-red" style="padding:6px 12px;font-size:0.8rem;" onclick="remCat('subject',${i})">Smazat</button>
+        </div>
+    `).join('');
+    document.getElementById('list-classes').innerHTML = cls.map((c,i) => `
+        <div class="cat-manage">
+            <span style="flex:1;font-weight:600;">${c}</span>
+            <button class="btn btn-red" style="padding:6px 12px;font-size:0.8rem;" onclick="remCat('class',${i})">Smazat</button>
+        </div>
+    `).join('');
+}
+
+async function addCat(type) {
+    if (type==='subject') {
+        const name = document.getElementById('new-subject').value.trim();
+        const emoji = document.getElementById('new-emoji').value.trim()||'📖';
+        if (!name) return;
+        const subs = LS.getSubjects();
+        const id = 's'+Date.now();
+        subs.push({id,name,emoji});
+        LS.setSubjects(subs);
+        await FB.save('subjects', id, {name,emoji});
+        document.getElementById('new-subject').value='';
+        document.getElementById('new-emoji').value='';
+    } else {
+        const name = document.getElementById('new-class').value.trim();
+        if (!name) return;
+        const cls = LS.getClasses(); cls.push(name); LS.setClasses(cls);
+        await FB.save('classes', 'c'+Date.now(), {name});
+        document.getElementById('new-class').value='';
+    }
+    renderCats();
+}
+
+functio
