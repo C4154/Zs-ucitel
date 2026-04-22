@@ -1,675 +1,132 @@
 <!DOCTYPE html>
 <html lang="cs" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Školní testy – Učitelka</title>
-    
-    <!-- Firebase Compat (spolehlivější pro jeden soubor) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
-    <style>
-        :root {
-            --bg: #f0f2f5;
-            --paper: #ffffff;
-            --text: #1a1a2e;
-            --muted: #6c757d;
-            --border: #dee2e6;
-            --primary: #4361ee;
-            --primary-light: #4895ef;
-            --success: #2ecc71;
-            --danger: #e74c3c;
-            --warning: #f39c12;
-            --radius: 12px;
-            --shadow: 0 2px 12px rgba(0,0,0,0.08);
-        }
-        [data-theme="dark"] {
-            --bg: #0f0f1a;
-            --paper: #1a1a2e;
-            --text: #e0e0e0;
-            --muted: #a0a0a0;
-            --border: #2d2d44;
-            --primary: #4895ef;
-            --shadow: 0 2px 12px rgba(0,0,0,0.3);
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.5;
-            font-size: 16px;
-            transition: background 0.3s, color 0.3s;
-        }
-        .wrap { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 28px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border);
-        }
-        .header h1 { font-size: 1.4rem; font-weight: 800; }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 20px;
-            border: none;
-            border-radius: var(--radius);
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all .15s;
-            width: 100%;
-        }
-        .btn:hover { transform: translateY(-1px); opacity: 0.9; }
-        .btn-blue { background: var(--primary); color: #fff; }
-        .btn-green { background: var(--success); color: #fff; }
-        .btn-red { background: var(--danger); color: #fff; }
-        .btn-yellow { background: var(--warning); color: #fff; }
-        .btn-gray { background: var(--bg); color: var(--text); border: 2px solid var(--border); }
-        .btn-row { display: flex; gap: 10px; margin-top: 16px; }
-        .btn-row .btn { width: auto; flex: 1; }
-        .box {
-            background: var(--paper);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-            padding: 24px;
-            margin-bottom: 16px;
-            transition: all 0.3s;
-        }
-        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; }
-        input, select, textarea {
-            width: 100%;
-            padding: 12px 14px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius);
-            font-size: 1rem;
-            font-family: inherit;
-            background: var(--paper);
-            color: var(--text);
-        }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
-        .field { margin-bottom: 16px; }
-        .tag {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            background: var(--bg);
-            color: var(--muted);
-            margin-right: 4px;
-        }
-        .tag.blue { background: #e3f2fd; color: #1565c0; }
-        .tag.green { background: #e8f5e9; color: #2e7d32; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
-        th { font-size: 0.75rem; text-transform: uppercase; color: var(--muted); font-weight: 700; }
-        .q-block {
-            border: 2px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
-            margin-bottom: 12px;
-            background: rgba(0,0,0,0.02);
-        }
-        .opt-line { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-        .opt-line input[type="radio"] { width: 20px; height: 20px; accent-color: var(--primary); }
-        .opt-line input[type="text"] { flex: 1; margin-bottom: 0; }
-        .cat-manage {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-            padding: 12px;
-            background: var(--bg);
-            border-radius: var(--radius);
-        }
-        .cat-manage input { margin-bottom: 0; }
-        .cat-manage .btn { width: auto; padding: 8px 16px; }
-        .theme-btn {
-            background: var(--paper);
-            border: 2px solid var(--border);
-            border-radius: 50%;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 1.3rem;
-        }
-        .hide { display: none !important; }
-        .center { text-align: center; }
-        .small { font-size: 0.9rem; color: var(--muted); }
-        .mt2 { margin-top: 16px; }
-        @media (max-width: 480px) { .btn-row { flex-direction: column; } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Školní testy – Učitelka</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+:root{--bg:#f0f2f5;--paper:#fff;--text:#1a1a2e;--muted:#6c757d;--b:#dee2e6;--pr:#4361ee;--ok:#2ecc71;--bad:#e74c3c;--war:#f39c12;--r:12px}
+[data-theme="dark"]{--bg:#0f0f1a;--paper:#1a1a2e;--text:#e0e0e0;--muted:#a0a0a0;--b:#2d2d44}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px}
+h1{font-size:1.3rem}
+.btn{padding:12px 18px;border:none;border-radius:var(--r);font-size:1rem;font-weight:600;cursor:pointer;width:100%;margin-top:10px}
+.btn:hover{opacity:.9}.btn-pr{background:var(--pr);color:#fff}.btn-ok{background:var(--ok);color:#fff}
+.btn-bad{background:var(--bad);color:#fff}.btn-war{background:var(--war);color:#fff}.btn-gr{background:var(--bg);border:2px solid var(--b);color:var(--text)}
+.row{display:flex;gap:8px}.row .btn{width:auto;flex:1;margin-top:0}
+.box{background:var(--paper);border-radius:var(--r);box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid var(--b);padding:20px;margin-bottom:14px}
+label{display:block;font-weight:600;margin:12px 0 4px;font-size:.9rem}
+input,select{width:100%;padding:10px;border:2px solid var(--b);border-radius:var(--r);font-size:1rem;background:var(--paper);color:var(--text)}
+input:focus,select:focus{outline:none;border-color:var(--pr)}
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;background:var(--bg);color:var(--muted);margin-right:4px}
+.tag.bl{background:#e3f2fd;color:#1565c0}.tag.gr{background:#e8f5e9;color:#2e7d32}
+table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{padding:10px;border-bottom:1px solid var(--b);text-align:left}
+th{font-size:.7rem;text-transform:uppercase;color:var(--muted)}
+.qb{border:2px solid var(--b);border-radius:var(--r);padding:16px;margin-bottom:10px;background:rgba(0,0,0,.02)}
+.ol{display:flex;gap:8px;margin-bottom:6px;align-items:center}.ol input[type=radio]{width:18px;height:18px}.ol input[type=text]{flex:1}
+.cm{display:flex;gap:8px;align-items:center;padding:10px;background:var(--bg);border-radius:var(--r);margin-bottom:8px}
+.cm input{flex:1;margin:0}.cm .btn{width:auto;padding:6px 14px;margin:0}
+.hide{display:none!important}.c{text-align:center}.s{font-size:.85rem;color:var(--muted)}.mt{margin-top:12px}
+.th{background:var(--paper);border:2px solid var(--b);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.2rem}
+@media(max-width:480px){.row{flex-direction:column}}
+</style>
 </head>
 <body>
-
 <div class="wrap">
-    <div class="header">
-        <h1>👩‍🏫 Školní testy</h1>
-        <button class="theme-btn" onclick="toggleTheme()">🌓</button>
-    </div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--b)">
+<h1>👩‍🏫 Školní testy</h1><button class="th" onclick="toggleTheme()">🌓</button>
+</div>
 
-    <!-- LOGIN -->
-    <div id="page-login">
-        <div class="box">
-            <h2 class="center mb2">Přihlášení učitelky</h2>
-            <div class="field">
-                <label>Email</label>
-                <input type="email" id="login-email" placeholder="vas@email.cz">
-            </div>
-            <div class="field">
-                <label>Heslo</label>
-                <input type="password" id="login-pass" placeholder="Heslo">
-            </div>
-            <button class="btn btn-blue" onclick="login()">Přihlásit se</button>
-            <p class="center small mt2">
-                Nemáte účet? <a href="#" onclick="showReg()" style="color:var(--primary);">Zaregistrovat se</a>
-            </p>
-        </div>
-    </div>
+<!-- LOGIN -->
+<div id="p-login"><div class="box"><h2 class="c">Přístup pro učitelku</h2>
+<p class="c s mb">Zadej heslo</p>
+<input type="password" id="pw" placeholder="Heslo" onkeydown="if(event.key==='Enter')check()">
+<button class="btn btn-pr" onclick="check()">Přihlásit</button>
+</div></div>
 
-    <!-- REGISTRACE -->
-    <div id="page-reg" class="hide">
-        <div class="box">
-            <h2 class="center mb2">Nový účet učitelky</h2>
-            <div class="field">
-                <label>Email</label>
-                <input type="email" id="reg-email" placeholder="vas@email.cz">
-            </div>
-            <div class="field">
-                <label>Heslo (min. 6 znaků)</label>
-                <input type="password" id="reg-pass" placeholder="Heslo">
-            </div>
-            <button class="btn btn-green" onclick="register()">Vytvořit účet</button>
-            <button class="btn btn-gray mt2" onclick="showLogin()">Zpět na přihlášení</button>
-        </div>
-    </div>
+<!-- DASHBOARD -->
+<div id="p-dash" class="hide">
+<div class="c mb"><h2>Přehled</h2><span class="s" id="st"></span></div>
+<div class="row mb"><button class="btn btn-ok" onclick="go('new')">+ Test</button><button class="btn btn-war" onclick="go('cats')">Kategorie</button><button class="btn btn-gr" onclick="logout()">Odhlásit</button></div>
+<div id="list"></div>
+</div>
 
-    <!-- DASHBOARD -->
-    <div id="page-dash" class="hide">
-        <div class="center mb2">
-            <h2>Učitelský přehled</h2>
-            <p class="small" id="dash-stats"></p>
-        </div>
-        <div class="btn-row mb2">
-            <button class="btn btn-green" onclick="go('new')">+ Nový test</button>
-            <button class="btn btn-yellow" onclick="go('cats')">Kategorie</button>
-            <button class="btn btn-gray" onclick="logout()">Odhlásit</button>
-        </div>
-        <div id="dash-tests"></div>
-    </div>
+<!-- KATEGORIE -->
+<div id="p-cats" class="hide">
+<h2 class="c mb">Kategorie</h2>
+<div class="box"><h3 class="mb">Předměty</h3><div id="ls"></div>
+<div class="cm mt"><input id="ns" placeholder="Název" style="flex:2"><input id="ne" placeholder="Emoji" style="width:60px"><button class="btn btn-pr" onclick="ac('s')">+</button></div></div>
+<div class="box"><h3 class="mb">Třídy</h3><div id="lc"></div>
+<div class="cm mt"><input id="nc" placeholder="např. 6. A"><button class="btn btn-pr" onclick="ac('c')">+</button></div></div>
+<button class="btn btn-gr mt" onclick="go('dash')">Zpět</button>
+</div>
 
-    <!-- KATEGORIE -->
-    <div id="page-cats" class="hide">
-        <div class="center mb2">
-            <h2>Správa kategorií</h2>
-        </div>
-        <div class="box">
-            <h3 class="mb2">Předměty</h3>
-            <div id="list-subjects"></div>
-            <div class="cat-manage mt2">
-                <input type="text" id="new-subject" placeholder="Název" style="flex:2;">
-                <input type="text" id="new-emoji" placeholder="Emoji" style="width:70px;">
-                <button class="btn btn-blue" onclick="addCat('subject')">+</button>
-            </div>
-        </div>
-        <div class="box">
-            <h3 class="mb2">Třídy</h3>
-            <div id="list-classes"></div>
-            <div class="cat-manage mt2">
-                <input type="text" id="new-class" placeholder="např. 6. A" style="flex:1;">
-                <button class="btn btn-blue" onclick="addCat('class')">+</button>
-            </div>
-        </div>
-        <button class="btn btn-gray mt2" onclick="go('dash')">← Zpět</button>
-    </div>
+<!-- EDITOR -->
+<div id="p-new" class="hide">
+<h2 class="c mb" id="et">Nový test</h2>
+<div class="box">
+<input id="en" placeholder="Název testu">
+<label>Předmět</label><select id="es"></select>
+<label>Třída</label><select id="ec"></select>
+<label><input type="checkbox" id="esh" style="width:auto"> Zamíchat otázky</label>
+</div>
+<div class="box"><h3 class="mb">Otázky</h3><div id="eq"></div><button class="btn btn-war mt" onclick="aq()">+ Otázka</button></div>
+<div class="row mt"><button class="btn btn-ok" onclick="save()">Uložit</button><button class="btn btn-gr" onclick="go('dash')">Zrušit</button></div>
+</div>
 
-    <!-- EDITOR -->
-    <div id="page-new" class="hide">
-        <div class="center mb2"><h2 id="ed-title">Nový test</h2></div>
-        <div class="box">
-            <div class="field">
-                <label>Název testu</label>
-                <input type="text" id="ed-name" placeholder="např. Základy geometrie">
-            </div>
-            <div class="field">
-                <label>Předmět</label>
-                <select id="ed-subject"></select>
-            </div>
-            <div class="field">
-                <label>Třída</label>
-                <select id="ed-class"></select>
-            </div>
-            <div class="field">
-                <label><input type="checkbox" id="ed-shuffle" style="width:auto;margin-right:8px;"> Zamíchat otázky</label>
-            </div>
-        </div>
-        <div class="box">
-            <h3 class="mb2">Otázky</h3>
-            <div id="ed-questions"></div>
-            <button class="btn btn-yellow mt2" onclick="addQ()">+ Přidat otázku</button>
-        </div>
-        <div class="btn-row mt2">
-            <button class="btn btn-green" onclick="saveTest()">Uložit</button>
-            <button class="btn btn-gray" onclick="go('dash')">Zrušit</button>
-        </div>
-    </div>
-
-    <!-- VÝSLEDKY -->
-    <div id="page-res" class="hide">
-        <div class="center mb2"><h2 id="res-title">Výsledky</h2></div>
-        <div class="box" style="overflow-x:auto;">
-            <table>
-                <thead><tr><th>Žák</th><th>Skóre</th><th>Datum</th></tr></thead>
-                <tbody id="res-tbody"></tbody>
-            </table>
-            <p class="center small mt2 hide" id="res-empty">Zatím žádné výsledky.</p>
-        </div>
-        <button class="btn btn-gray mt2" onclick="go('dash')">Zpět</button>
-    </div>
+<!-- VÝSLEDKY -->
+<div id="p-res" class="hide">
+<h2 class="c mb" id="rt">Výsledky</h2>
+<div class="box" style="overflow:auto"><table><thead><tr><th>Žák</th><th>Skóre</th><th>Datum</th></tr></thead><tbody id="tb"></tbody></table>
+<p class="c s mt hide" id="re">Zatím nic.</p></div>
+<button class="btn btn-gr mt" onclick="go('dash')">Zpět</button>
+</div>
 </div>
 
 <script>
-// ==================== FIREBASE ====================
-const firebaseConfig = {
-    apiKey: "AIzaSyCsEtg1GEGDbZDawmLk-sfQfdauHFJaiko",
-    authDomain: "diar-4f2e8.firebaseapp.com",
-    projectId: "diar-4f2e8",
-    storageBucket: "diar-4f2e8.firebasestorage.app",
-    messagingSenderId: "19490498944",
-    appId: "1:19490498944:web:733ab182f3a1e09483f965"
-};
+const cfg={apiKey:"AIzaSyCsEtg1GEGDbZDawmLk-sfQfdauHFJaiko",authDomain:"diar-4f2e8.firebaseapp.com",projectId:"diar-4f2e8",storageBucket:"diar-4f2e8.firebasestorage.app",messagingSenderId:"19490498944",appId:"1:19490498944:web:733ab182f3a1e09483f965"};
+const PASS="jakub";
+let db,ed=null;
+try{firebase.initializeApp(cfg);db=firebase.firestore()}catch(e){alert("Firebase chyba: "+e.message)}
 
-let db, auth;
+const LS={k:'st_u',ld(){try{return JSON.parse(localStorage.getItem(this.k))||{}}catch(e){return{}}},sv(d){localStorage.setItem(this.k,JSON.stringify(d))},
+gs(){return this.ld().s||[]},ss(s){const d=this.ld();d.s=s;this.sv(d)},gc(){return this.ld().c||[]},sc(c){const d=this.ld();d.c=c;this.sv(d)},
+gt(){return this.ld().t||[]},st(t){const d=this.ld();d.t=t;this.sv(d)},at(t){const x=this.gt();x.push(t);this.st(x)},
+ut(i,d){this.st(this.gt().map(t=>t.id===i?{...t,...d}:t))},dt(i){this.st(this.gt().filter(t=>t.id!==i))},gr(){return this.ld().r||[]}}
 
-try {
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-    auth = firebase.auth();
-    console.log("Firebase OK");
-} catch(e) {
-    console.error("Firebase chyba:", e);
-    alert("Chyba připojení k Firebase. Zkontroluj konzoli.");
-}
+function seed(){if(LS.gs().length)return;LS.ss([{id:'mat',n:'Matematika',e:'📐'},{id:'cest',n:'Čeština',e:'📚'},{id:'ang',n:'Angličtina',e:'🌍'}]);LS.sc(['5. A','6. A','7. A'])}
 
-// ==================== LOCAL STORAGE ====================
-const LS = {
-    key: 'st_ucitel',
-    load() { try { return JSON.parse(localStorage.getItem(this.key)) || {}; } catch(e) { return {}; } },
-    save(d) { localStorage.setItem(this.key, JSON.stringify(d)); },
-    getSubjects() { return this.load().subjects || []; },
-    setSubjects(s) { const d=this.load(); d.subjects=s; this.save(d); },
-    getClasses() { return this.load().classes || []; },
-    setClasses(c) { const d=this.load(); d.classes=c; this.save(d); },
-    getTests() { return this.load().tests || []; },
-    setTests(t) { const d=this.load(); d.tests=t; this.save(d); },
-    addTest(t) { const ts=this.getTests(); ts.push(t); this.setTests(ts); },
-    updateTest(id, data) { this.setTests(this.getTests().map(t=>t.id===id?{...t,...data}:t)); },
-    deleteTest(id) { this.setTests(this.getTests().filter(t=>t.id!==id)); },
-    getResults() { return this.load().results || []; }
-};
+function check(){if(document.getElementById('pw').value===PASS){localStorage.setItem('st_auth','1');go('dash')}else{alert('Špatné heslo')}}
+function logout(){localStorage.removeItem('st_auth');document.getElementById('pw').value='';go('login')}
+function go(p){document.querySelectorAll('[id^="p-"]').forEach(e=>e.classList.add('hide'));document.getElementById('p-'+p).classList.remove('hide');if(p=='dash')rd();if(p=='cats')rc();if(p=='new')init()}
+function toggleTheme(){const h=document.documentElement,t=h.getAttribute('data-theme')=='light'?'dark':'light';h.setAttribute('data-theme',t);localStorage.setItem('theme',t)}
+(function(){const t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);if(localStorage.getItem('st_auth')==='1')go('dash')})();
 
-// ==================== SEED DATA ====================
-function seed() {
-    if (LS.getSubjects().length > 0) return;
-    LS.setSubjects([
-        {id:'mat', name:'Matematika', emoji:'📐'},
-        {id:'cest', name:'Čeština', emoji:'📚'},
-        {id:'ang', name:'Angličtina', emoji:'🌍'},
-        {id:'prir', name:'Přírodopis', emoji:'🔬'},
-        {id:'dej', name:'Dějepis', emoji:'🏛️'}
-    ]);
-    LS.setClasses(['5. A','5. B','6. A','6. B','7. A','7. B','8. A','8. B','9. A','9. B']);
-}
+async function fsync(){if(!db)return;try{const[a,b,c,d]=await Promise.all([db.collection('subjects').get(),db.collection('classes').get(),db.collection('tests').orderBy('createdAt','desc').get(),db.collection('results').orderBy('date','desc').get()]);const s=a.docs.map(x=>({id:x.id,...x.data()}));const cl=b.docs.map(x=>x.data().n||x.data().name);const t=c.docs.map(x=>({id:x.id,...x.data()}));const r=d.docs.map(x=>({id:x.id,...x.data()}));if(s.length)LS.ss(s);if(cl.length)LS.sc(cl);if(t.length)LS.st(t);const x=LS.ld();x.r=r.length?r:(x.r||[]);LS.sv(x)}catch(e){console.log(e)}}
+async function fset(c,i,d){if(!db)return;try{await db.collection(c).doc(i).set(d)}catch(e){}}
+async function fdel(c,i){if(!db)return;try{await db.collection(c).doc(i).delete()}catch(e){}}
 
-// ==================== THEME ====================
-function toggleTheme() {
-    const h = document.documentElement;
-    h.setAttribute('data-theme', h.getAttribute('data-theme')==='light'?'dark':'light');
-    localStorage.setItem('theme', h.getAttribute('data-theme'));
-}
-(function(){ 
-    const t=localStorage.getItem('theme')||'light'; 
-    document.documentElement.setAttribute('data-theme',t); 
-})();
+function rd(){const t=LS.gt(),r=LS.gr();document.getElementById('st').textContent=t.length+' testů • '+r.length+' vyplnění';document.getElementById('list').innerHTML=t.length?t.map(x=>{const v=r.filter(z=>z.testId==x.id);const a=v.length?Math.round(v.reduce((p,q)=>p+q.score,0)/v.length):'-';return`<div class="box"><div style="display:flex;justify-content:space-between"><div><b>${x.title}</b><div class="s mt"><span class="tag bl">${x.subjectName||x.subject}</span><span class="tag">${x.class}</span></div></div><div class="c"><b style="font-size:1.2rem;color:var(--pr)">${a}${a!='-'?'%':''}</b><div class="s">průměr</div></div></div><div class="row mt"><button class="btn btn-pr" onclick="edit('${x.id}')">Upravit</button><button class="btn btn-war" onclick="vres('${x.id}')">Výsledky</button><button class="btn btn-bad" onclick="del('${x.id}')">🗑</button></div></div>`}).join(''):'<p class="c s">Zatím nic.</p>'}
+async function del(i){if(!confirm('Smazat?'))return;LS.dt(i);await fdel('tests',i);rd()}
 
-// ==================== NAVIGACE ====================
-function go(p) {
-    document.querySelectorAll('[id^="page-"]').forEach(e=>e.classList.add('hide'));
-    document.getElementById('page-'+p).classList.remove('hide');
-    window.scrollTo(0,0);
-    if (p==='dash') renderDash();
-    if (p==='cats') renderCats();
-    if (p==='new') initEditor();
-}
+function rc(){const s=LS.gs(),c=LS.gc();document.getElementById('ls').innerHTML=s.map((x,i)=>`<div class="cm"><span style="font-size:1.2rem">${x.e||'📖'}</span><b style="flex:1">${x.n||x.name}</b><button class="btn btn-bad" style="padding:4px 10px;font-size:.8rem" onclick="rcat('s',${i})">✕</button></div>`).join('');document.getElementById('lc').innerHTML=c.map((x,i)=>`<div class="cm"><b style="flex:1">${x}</b><button class="btn btn-bad" style="padding:4px 10px;font-size:.8rem" onclick="rcat('c',${i})">✕</button></div>`).join('')}
+async function ac(t){if(t=='s'){const n=document.getElementById('ns').value.trim(),e=document.getElementById('ne').value.trim()||'📖';if(!n)return;const x=LS.gs(),id='s'+Date.now();x.push({id,n,e});LS.ss(x);await fset('subjects',id,{n,e});document.getElementById('ns').value='';document.getElementById('ne').value=''}else{const n=document.getElementById('nc').value.trim();if(!n)return;const x=LS.gc();x.push(n);LS.sc(x);await fset('classes','c'+Date.now(),{n});document.getElementById('nc').value=''}rc()}
+function rcat(t,i){if(!confirm('Smazat?'))return;if(t=='s'){const x=LS.gs();x.splice(i,1);LS.ss(x)}else{const x=LS.gc();x.splice(i,1);LS.sc(x)}rc()}
 
-function showReg() { go('reg'); }
-function showLogin() { go('login'); }
+function init(){ed=null;document.getElementById('et').textContent='Nový test';document.getElementById('en').value='';document.getElementById('esh').checked=false;document.getElementById('eq').innerHTML='';const s=LS.gs(),c=LS.gc();document.getElementById('es').innerHTML=s.map(x=>`<option value="${x.id}">${x.e||'📖'} ${x.n||x.name}</option>`).join('');document.getElementById('ec').innerHTML=c.map(x=>`<option>${x}</option>`).join('');aq();aq()}
+function aq(){const n=document.querySelectorAll('.qb').length;const d=document.createElement('div');d.className='qb';d.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>Otázka ${n+1}</b>${n>0?'<button class="btn btn-bad" style="padding:2px 8px;font-size:.8rem" onclick="this.parentElement.parentElement.remove();rn()">✕</button>':''}</div><input class="qt" placeholder="Text otázky"><div style="margin-top:8px">${[0,1,2,3].map(i=>`<div class="ol"><input type="radio" name="r${n}" value="${i}" ${i==0?'checked':''}><input class="ot" placeholder="${String.fromCharCode(65+i)}"></div>`).join('')}</div>`;document.getElementById('eq').appendChild(d)}
+function rn(){document.querySelectorAll('.qb').forEach((b,i)=>{b.querySelector('b').textContent='Otázka '+(i+1);b.querySelectorAll('input[type=radio]').forEach(r=>r.name='r'+i)})}
+function edit(id){const t=LS.gt().find(x=>x.id==id);if(!t)return;ed=id;go('new');document.getElementById('et').textContent='Upravit';document.getElementById('en').value=t.title;document.getElementById('es').value=t.subject;document.getElementById('ec').value=t.class;document.getElementById('esh').checked=t.shuffle||false;document.getElementById('eq').innerHTML='';t.questions.forEach((q,i)=>{const d=document.createElement('div');d.className='qb';d.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>Otázka ${i+1}</b>${i>0?'<button class="btn btn-bad" style="padding:2px 8px;font-size:.8rem" onclick="this.parentElement.parentElement.remove();rn()">✕</button>':''}</div><input class="qt" value="${q.q}"><div style="margin-top:8px">${q.o.map((o,j)=>`<div class="ol"><input type="radio" name="r${i}" value="${j}" ${j==q.a?'checked':''}><input class="ot" value="${o}"></div>`).join('')}</div>`;document.getElementById('eq').appendChild(d)})}
 
-// ==================== AUTH ====================
-function login() {
-    const email = document.getElementById('login-email').value;
-    const pass = document.getElementById('login-pass').value;
-    if (!auth) { alert('Firebase Auth není dostupné.'); return; }
-    auth.signInWithEmailAndPassword(email, pass).catch(e => alert('Chyba: '+e.message));
-}
+async function save(){const title=document.getElementById('en').value.trim(),sid=document.getElementById('es').value,cls=document.getElementById('ec').value,sh=document.getElementById('esh').checked,sub=LS.gs().find(s=>s.id==sid);if(!title){alert('Zadej název');return}const qs=[];document.querySelectorAll('.qb').forEach(b=>{const q=b.querySelector('.qt').value.trim(),o=[...b.querySelectorAll('.ot')].map(x=>x.value.trim()),a=parseInt(b.querySelector('input[type=radio]:checked').value);if(!q||o.some(x=>!x)){alert('Vyplň vše');return}qs.push({q,o,a})});const d={id:ed||'t'+Date.now(),title,subject:sid,subjectName:sub?(sub.n||sub.name):sid,class:cls,shuffle:sh,questions:qs,createdAt:Date.now()};if(ed)LS.ut(ed,d);else LS.at(d);await fset('tests',d.id,d);go('dash')}
 
-function register() {
-    const email = document.getElementById('reg-email').value;
-    const pass = document.getElementById('reg-pass').value;
-    if (!auth) { alert('Firebase Auth není dostupné.'); return; }
-    if (pass.length < 6) { alert('Heslo musí mít min. 6 znaků.'); return; }
-    auth.createUserWithEmailAndPassword(email, pass)
-        .then(() => { alert('Účet vytvořen! Nyní se přihlaš.'); showLogin(); })
-        .catch(e => alert('Chyba: '+e.message));
-}
+function vres(id){const t=LS.gt().find(x=>x.id==id),r=LS.gr().filter(x=>x.testId==id).sort((a,b)=>b.date-a.date);document.getElementById('rt').textContent='Výsledky: '+t.title;const b=document.getElementById('tb');if(!r.length){b.innerHTML='';document.getElementById('re').classList.remove('hide')}else{document.getElementById('re').classList.add('hide');b.innerHTML=r.map(x=>`<tr><td>${x.name}</td><td><span class="tag ${x.score>=70?'gr':'bl'}">${x.score}%</span></td><td class="s">${new Date(x.date).toLocaleDateString('cs')}</td></tr>`).join('')}go('res')}
 
-function logout() {
-    if (auth) auth.signOut();
-    go('login');
-}
-
-// Posluchač přihlášení
-if (auth) {
-    auth.onAuthStateChanged(user => {
-        if (user) go('dash');
-        else go('login');
-    });
-}
-
-// ==================== FIRESTORE SYNC ====================
-async function syncFromFirebase() {
-    if (!db) return;
-    try {
-        const [subSnap, clsSnap, testSnap, resSnap] = await Promise.all([
-            db.collection('subjects').get(),
-            db.collection('classes').get(),
-            db.collection('tests').orderBy('createdAt','desc').get(),
-            db.collection('results').orderBy('date','desc').get()
-        ]);
-        
-        const subs = subSnap.docs.map(d => ({id:d.id, ...d.data()}));
-        const cls = clsSnap.docs.map(d => d.data().name);
-        const tests = testSnap.docs.map(d => ({id:d.id, ...d.data()}));
-        const res = resSnap.docs.map(d => ({id:d.id, ...d.data()}));
-        
-        if (subs.length) LS.setSubjects(subs);
-        if (cls.length) LS.setClasses(cls);
-        if (tests.length) LS.setTests(tests);
-        
-        const d = LS.load(); 
-        d.results = res.length ? res : (d.results||[]); 
-        LS.save(d);
-    } catch(e) { console.error('Sync error:', e); }
-}
-
-async function saveToFirebase(col, id, data) {
-    if (!db) return;
-    try { await db.collection(col).doc(id).set(data); } catch(e) { console.error(e); }
-}
-
-async function deleteFromFirebase(col, id) {
-    if (!db) return;
-    try { await db.collection(col).doc(id).delete(); } catch(e) { console.error(e); }
-}
-
-// ==================== DASHBOARD ====================
-function renderDash() {
-    const tests = LS.getTests();
-    const results = LS.getResults();
-    document.getElementById('dash-stats').textContent = `${tests.length} testů • ${results.length} vyplnění`;
-    
-    const box = document.getElementById('dash-tests');
-    if (tests.length === 0) {
-        box.innerHTML = '<p class="center small">Zatím žádný test. Vytvoř první!</p>';
-        return;
-    }
-    
-    box.innerHTML = tests.map(t => {
-        const res = results.filter(r=>r.testId===t.id);
-        const avg = res.length ? Math.round(res.reduce((a,b)=>a+b.score,0)/res.length) : '-';
-        return `
-        <div class="box" style="padding:18px;margin-bottom:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-                <div>
-                    <div style="font-weight:700;font-size:1.1rem;">${t.title}</div>
-                    <div class="small" style="margin-top:6px;">
-                        <span class="tag blue">${t.subjectName||t.subject}</span>
-                        <span class="tag">${t.class}</span>
-                        <span class="tag green">${t.questions.length} otázek</span>
-                    </div>
-                </div>
-                <div style="text-align:right;">
-                    <div style="font-size:1.3rem;font-weight:800;color:var(--primary);">${avg}${avg!=='-'?'%':''}</div>
-                    <div class="small">průměr</div>
-                </div>
-            </div>
-            <div class="btn-row" style="margin-top:14px;">
-                <button class="btn btn-blue" style="flex:1;" onclick="editTest('${t.id}')">Upravit</button>
-                <button class="btn btn-yellow" style="flex:1;" onclick="viewRes('${t.id}')">Výsledky</button>
-                <button class="btn btn-red" style="flex:0 0 auto;" onclick="delTest('${t.id}')">🗑</button>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-async function delTest(id) {
-    if (!confirm('Opravdu smazat tento test?')) return;
-    LS.deleteTest(id);
-    await deleteFromFirebase('tests', id);
-    renderDash();
-}
-
-// ==================== KATEGORIE ====================
-function renderCats() {
-    const subs = LS.getSubjects();
-    const cls = LS.getClasses();
-    
-    document.getElementById('list-subjects').innerHTML = subs.map((s,i) => `
-        <div class="cat-manage">
-            <span style="font-size:1.3rem;">${s.emoji||'📖'}</span>
-            <span style="flex:1;font-weight:600;">${s.name}</span>
-            <button class="btn btn-red" style="padding:6px 12px;font-size:0.8rem;" onclick="remCat('subject',${i})">Smazat</button>
-        </div>
-    `).join('');
-    
-    document.getElementById('list-classes').innerHTML = cls.map((c,i) => `
-        <div class="cat-manage">
-            <span style="flex:1;font-weight:600;">${c}</span>
-            <button class="btn btn-red" style="padding:6px 12px;font-size:0.8rem;" onclick="remCat('class',${i})">Smazat</button>
-        </div>
-    `).join('');
-}
-
-async function addCat(type) {
-    if (type==='subject') {
-        const name = document.getElementById('new-subject').value.trim();
-        const emoji = document.getElementById('new-emoji').value.trim()||'📖';
-        if (!name) return;
-        const subs = LS.getSubjects();
-        const id = 's'+Date.now();
-        subs.push({id, name, emoji});
-        LS.setSubjects(subs);
-        await saveToFirebase('subjects', id, {name, emoji});
-        document.getElementById('new-subject').value='';
-        document.getElementById('new-emoji').value='';
-    } else {
-        const name = document.getElementById('new-class').value.trim();
-        if (!name) return;
-        const cls = LS.getClasses();
-        cls.push(name);
-        LS.setClasses(cls);
-        await saveToFirebase('classes', 'c'+Date.now(), {name});
-        document.getElementById('new-class').value='';
-    }
-    renderCats();
-}
-
-function remCat(type, idx) {
-    if (!confirm('Opravdu smazat?')) return;
-    if (type==='subject') { 
-        const s=LS.getSubjects(); 
-        s.splice(idx,1); 
-        LS.setSubjects(s); 
-    } else { 
-        const c=LS.getClasses(); 
-        c.splice(idx,1); 
-        LS.setClasses(c); 
-    }
-    renderCats();
-}
-
-// ==================== EDITOR ====================
-let editingId = null;
-
-function initEditor() {
-    editingId = null;
-    document.getElementById('ed-title').textContent = 'Nový test';
-    document.getElementById('ed-name').value = '';
-    document.getElementById('ed-shuffle').checked = false;
-    document.getElementById('ed-questions').innerHTML = '';
-    
-    const subs = LS.getSubjects();
-    const cls = LS.getClasses();
-    document.getElementById('ed-subject').innerHTML = subs.map(s=>`<option value="${s.id}">${s.emoji||'📖'} ${s.name}</option>`).join('');
-    document.getElementById('ed-class').innerHTML = cls.map(c=>`<option value="${c}">${c}</option>`).join('');
-    
-    addQ(); 
-    addQ();
-}
-
-function addQ() {
-    const n = document.querySelectorAll('.q-block').length;
-    const d = document.createElement('div');
-    d.className = 'q-block';
-    d.innerHTML = `
-        <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
-            <strong>Otázka ${n+1}</strong>
-            ${n>0?'<button class="btn btn-red" style="padding:4px 10px;font-size:0.8rem;" onclick="this.parentElement.parentElement.remove();renum()">Smazat</button>':''}
-        </div>
-        <input type="text" class="q-text" placeholder="Text otázky" required>
-        <div class="opts" style="margin-top:10px;">
-            ${[0,1,2,3].map(i=>`<div class="opt-line">
-                <input type="radio" name="c_${n}" value="${i}" ${i===0?'checked':''}>
-                <input type="text" class="opt-txt" placeholder="Odpověď ${String.fromCharCode(65+i)}" required>
-            </div>`).join('')}
-        </div>`;
-    document.getElementById('ed-questions').appendChild(d);
-}
-
-function renum() {
-    document.querySelectorAll('.q-block').forEach((b,i)=>{
-        b.querySelector('strong').textContent='Otázka '+(i+1);
-        b.querySelectorAll('input[type="radio"]').forEach(r=>r.name='c_'+i);
-    });
-}
-
-function editTest(id) {
-    const t = LS.getTests().find(x=>x.id===id);
-    if (!t) return;
-    editingId = id;
-    go('new');
-    
-    document.getElementById('ed-title').textContent='Upravit test';
-    document.getElementById('ed-name').value=t.title;
-    document.getElementById('ed-subject').value=t.subject;
-    document.getElementById('ed-class').value=t.class;
-    document.getElementById('ed-shuffle').checked=t.shuffle||false;
-    document.getElementById('ed-questions').innerHTML='';
-    
-    t.questions.forEach((q,qi)=>{
-        const d=document.createElement('div'); 
-        d.className='q-block';
-        d.innerHTML=`
-            <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
-                <strong>Otázka ${qi+1}</strong>
-                ${qi>0?'<button class="btn btn-red" style="padding:4px 10px;font-size:0.8rem;" onclick="this.parentElement.parentElement.remove();renum()">Smazat</button>':''}
-            </div>
-            <input type="text" class="q-text" value="${q.q}" required>
-            <div class="opts" style="margin-top:10px;">
-                ${q.o.map((opt,i)=>`<div class="opt-line">
-                    <input type="radio" name="c_${qi}" value="${i}" ${i===q.a?'checked':''}>
-                    <input type="text" class="opt-txt" value="${opt}" required>
-                </div>`).join('')}
-            </div>`;
-        document.getElementById('ed-questions').appendChild(d);
-    });
-}
-
-async function saveTest() {
-    const title = document.getElementById('ed-name').value.trim();
-    const sid = document.getElementById('ed-subject').value;
-    const cls = document.getElementById('ed-class').value;
-    const shuffle = document.getElementById('ed-shuffle').checked;
-    const sub = LS.getSubjects().find(s=>s.id===sid);
-    
-    if (!title) { alert('Zadej název testu.'); return; }
-    
-    const qs=[];
-    document.querySelectorAll('.q-block').forEach(b=>{
-        const q=b.querySelector('.q-text').value.trim();
-        const o=Array.from(b.querySelectorAll('.opt-txt')).map(i=>i.value.trim());
-        const a=parseInt(b.querySelector('input[type="radio"]:checked').value);
-        if (!q||o.some(x=>!x)) { alert('Vyplň všechny otázky a odpovědi.'); return; }
-        qs.push({q,o,a});
-    });
-    
-    const data = { 
-        id: editingId||'t'+Date.now(), 
-        title, 
-        subject: sid, 
-        subjectName: sub?sub.name:sid, 
-        class: cls, 
-        shuffle, 
-        questions: qs, 
-        createdAt: Date.now() 
-    };
-    
-    if (editingId) LS.updateTest(editingId, data);
-    else LS.addTest(data);
-    
-    await saveToFirebase('tests', data.id, data);
-    go('dash');
-}
-
-// ==================== VÝSLEDKY ====================
-function viewRes(id) {
-    const t = LS.getTests().find(x=>x.id===id);
-    const res = LS.getResults().filter(r=>r.testId===id).sort((a,b)=>b.date-a.date);
-    document.getElementById('res-title').textContent='Výsledky: '+t.title;
-    
-    const tb = document.getElementById('res-tbody');
-    if (!res.length) { 
-        tb.innerHTML=''; 
-        document.getElementById('res-empty').classList.remove('hide'); 
-    } else {
-        document.getElementById('res-empty').classList.add('hide');
-        tb.innerHTML = res.map(r=>`<tr>
-            <td>${r.name}</td>
-            <td><span class="tag ${r.score>=70?'green':'blue'}">${r.score}%</span></td>
-            <td class="small">${new Date(r.date).toLocaleDateString('cs')}</td>
-        </tr>`).join('');
-    }
-    go('res');
-}
-
-// ==================== START ====================
-async function init() { 
-    seed(); 
-    await syncFromFirebase(); 
-}
-document.readyState==='loading' ? document.addEventListener('DOMContentLoaded',init) : init();
+async function initAll(){seed();await fsync()}
+document.readyState=='loading'?document.addEventListener('DOMContentLoaded',initAll):initAll()
 </script>
 </body>
 </html>
