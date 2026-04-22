@@ -38,14 +38,31 @@ th{font-size:.7rem;text-transform:uppercase;color:var(--muted)}
 <div class="wrap">
 <div class="header"><h1>👩‍🏫 Školní testy</h1><button class="th" onclick="toggleTheme()">🌓</button></div>
 
-<div id="p-login"><div class="box"><h2 class="c">Přístup pro učitelku</h2><p class="c s mt">Heslo: <strong>jakub</strong></p><input type="password" id="pw" placeholder="Heslo" style="margin-top:10px" onkeydown="if(event.key==='Enter')check()"><button class="btn btn-pr mt" onclick="check()">Přihlásit</button></div></div>
+<!-- LOGIN -->
+<div id="p-login"><div class="box"><h2 class="c">Přístup pro učitelku</h2>
+<input type="password" id="pw" placeholder="Zadej heslo" style="margin-top:16px" onkeydown="if(event.key==='Enter')check()">
+<button class="btn btn-pr mt" onclick="check()">Přihlásit</button>
+</div></div>
 
+<!-- DASHBOARD -->
 <div id="p-dash" class="hide"><div class="c mb"><h2>Přehled</h2><span class="s" id="st"></span></div><div class="row mb"><button class="btn btn-ok" onclick="go('new')">+ Test</button><button class="btn btn-war" onclick="go('cats')">Kategorie</button><button class="btn btn-gr" onclick="logout()">Odhlásit</button></div><div id="list"></div></div>
 
-<div id="p-cats" class="hide"><h2 class="c mb">Kategorie</h2><div class="box"><h3 class="mb">Předměty</h3><div id="ls"></div><div class="cm mt"><input id="ns" placeholder="Název" style="flex:2"><input id="ne" placeholder="Emoji" style="width:60px"><button class="btn btn-pr" onclick="ac('s')">+</button></div></div><div class="box"><h3 class="mb">Třídy</h3><div id="lc"></div><div class="cm mt"><input id="nc" placeholder="např. 6. A"><button class="btn btn-pr" onclick="ac('c')">+</button></div></div><button class="btn btn-gr mt" onclick="go('dash')">Zpět</button></div>
+<!-- KATEGORIE -->
+<div id="p-cats" class="hide"><h2 class="c mb">Kategorie</h2>
+<div class="box"><h3 class="mb">Předměty</h3><div id="ls"></div>
+<div class="cm mt"><input id="ns" placeholder="Název předmětu" style="flex:1"></div>
+<label>Vyber ikonku předmětu:</label>
+<select id="em-sel" style="margin-bottom:10px"></select>
+<button class="btn btn-pr" onclick="ac('s')">Přidat předmět</button>
+</div>
+<div class="box"><h3 class="mb">Třídy</h3><div id="lc"></div><div class="cm mt"><input id="nc" placeholder="např. 6. A"><button class="btn btn-pr" onclick="ac('c')">+</button></div></div>
+<button class="btn btn-gr mt" onclick="go('dash')">Zpět</button>
+</div>
 
+<!-- EDITOR -->
 <div id="p-new" class="hide"><h2 class="c mb" id="et">Nový test</h2><div class="box"><input id="en" placeholder="Název testu"><label>Předmět</label><select id="es"></select><label>Třída</label><select id="ec"></select><label><input type="checkbox" id="esh" style="width:auto"> Zamíchat otázky</label></div><div class="box"><h3 class="mb">Otázky</h3><div id="eq"></div><button class="btn btn-war mt" onclick="aq()">+ Otázka</button></div><div class="row mt"><button class="btn btn-ok" onclick="save()">Uložit</button><button class="btn btn-gr" onclick="go('dash')">Zrušit</button></div></div>
 
+<!-- VÝSLEDKY -->
 <div id="p-res" class="hide"><h2 class="c mb" id="rt">Výsledky</h2><div class="box" style="overflow:auto"><table><thead><tr><th>Žák</th><th>Skóre</th><th>Datum</th></tr></thead><tbody id="tb"></tbody></table><p class="c s mt hide" id="re">Zatím nic.</p></div><button class="btn btn-gr mt" onclick="go('dash')">Zpět</button></div>
 </div>
 
@@ -53,6 +70,25 @@ th{font-size:.7rem;text-transform:uppercase;color:var(--muted)}
 const cfg={apiKey:"AIzaSyCsEtg1GEGDbZDawmLk-sfQfdauHFJaiko",authDomain:"diar-4f2e8.firebaseapp.com",projectId:"diar-4f2e8",storageBucket:"diar-4f2e8.firebasestorage.app",messagingSenderId:"19490498944",appId:"1:19490498944:web:733ab182f3a1e09483f965"};
 const PASS="jakub";
 let db,ed=null;
+
+const EMOJIS=[
+{e:'📐',l:'Matematika'},{e:'🔢',l:'Počty'},{e:'📚',l:'Čeština'},{e:'✍️',l:'Psaní'},
+{e:'🇬🇧',l:'Angličtina'},{e:'🇩🇪',l:'Němčina'},{e:'🇫🇷',l:'Francouzština'},{e:'🌍',l:'Jazyky'},
+{e:'🔬',l:'Přírodopis'},{e:'🧬',l:'Biologie'},{e:'🌿',l:'Příroda'},{e:'🦋',l:'Zoologie'},
+{e:'🌎',l:'Zeměpis'},{e:'🗺️',l:'Mapy'},{e:'🏔️',l:'Geografie'},{e:'🏛️',l:'Dějepis'},
+{e:'📜',l:'Historie'},{e:'⚔️',l:'Dějiny'},{e:'🏛️',l:'Občanka'},{e:'🗳️',l:'Občanství'},
+{e:'⚡',l:'Fyzika'},{e:'🔭',l:'Vesmír'},{e:'🧲',l:'Magnetismus'},{e:'🧪',l:'Chemie'},
+{e:'⚗️',l:'Laboratoř'},{e:'🎵',l:'Hudebka'},{e:'🎹',l:'Hudba'},{e:'🎸',l:'Nástroje'},
+{e:'🎨',l:'Výtvarka'},{e:'🖌️',l:'Malování'},{e:'✏️',l:'Kreslení'},{e:'⚽',l:'Tělocvik'},
+{e:'🏃',l:'Sport'},{e:'🏀',l:'Míčové'},{e:'💻',l:'Informatika'},{e:'🖥️',l:'PC'},
+{e:'⌨️',l:'Programování'},{e:'🔨',l:'Pracovní'},{e:'🪚',l:'Dílna'},{e:'🧵',l:'Ruční práce'},
+{e:'🏠',l:'Rodinná výchova'},{e:'👨‍👩‍👧‍👦',l:'Rodina'},{e:'🍳',l:'Vaření'},{e:'🤝',l:'Etika'},
+{e:'❤️',l:'Charakter'},{e:'🕊️',l:'Mír'},{e:'🎭',l:'Dramatická'},{e:'🎬',l:'Divadlo'},
+{e:'🎪',l:'Herci'},{e:'📖',l:'Čtení'},{e:'📕',l:'Knihy'},{e:'🔖',l:'Čtenářský klub'},
+{e:'🚦',l:'Dopravka'},{e:'🚗',l:'Auto'},{e:'🚲',l:'Kolo'},{e:'💰',l:'Finance'},
+{e:'💳',l:'Ekonomika'},{e:'📈',l:'Byznys'}
+];
+
 try{firebase.initializeApp(cfg);db=firebase.firestore()}catch(e){alert("Firebase chyba: "+e.message)}
 
 const LS={k:'st_u',ld(){try{return JSON.parse(localStorage.getItem(this.k))||{}}catch(e){return{}}},sv(d){localStorage.setItem(this.k,JSON.stringify(d))},
@@ -60,13 +96,15 @@ gs(){return this.ld().s||[]},ss(s){const d=this.ld();d.s=s;this.sv(d)},gc(){retu
 gt(){return this.ld().t||[]},st(t){const d=this.ld();d.t=t;this.sv(d)},at(t){const x=this.gt();x.push(t);this.st(x)},
 ut(i,d){this.st(this.gt().map(t=>t.id===i?{...t,...d}:t))},dt(i){this.st(this.gt().filter(t=>t.id!==i))},gr(){return this.ld().r||[]}}
 
-function seed(){if(LS.gs().length)return;LS.ss([{id:'mat',n:'Matematika',e:'📐'},{id:'cest',n:'Čeština',e:'📚'},{id:'ang',n:'Angličtina',e:'🌍'}]);LS.sc(['5. A','6. A','7. A'])}
+function seed(){if(LS.gs().length)return;LS.ss([{id:'mat',n:'Matematika',e:'📐'},{id:'cest',n:'Čeština',e:'📚'},{id:'ang',n:'Angličtina',e:'🇬🇧'}]);LS.sc(['5. A','6. A','7. A'])}
 
 function check(){if(document.getElementById('pw').value===PASS){localStorage.setItem('st_auth','1');go('dash')}else{alert('Špatné heslo')}}
 function logout(){localStorage.removeItem('st_auth');document.getElementById('pw').value='';go('login')}
-function go(p){document.querySelectorAll('[id^="p-"]').forEach(e=>e.classList.add('hide'));document.getElementById('p-'+p).classList.remove('hide');if(p=='dash')rd();if(p=='cats')rc();if(p=='new')init();window.scrollTo(0,0)}
+function go(p){document.querySelectorAll('[id^="p-"]').forEach(e=>e.classList.add('hide'));document.getElementById('p-'+p).classList.remove('hide');if(p=='dash')rd();if(p=='cats'){rc();fillEmSelect()}if(p=='new')init();window.scrollTo(0,0)}
 function toggleTheme(){const h=document.documentElement,t=h.getAttribute('data-theme')=='light'?'dark':'light';h.setAttribute('data-theme',t);localStorage.setItem('theme',t)}
 (function(){const t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);if(localStorage.getItem('st_auth')==='1')go('dash')})();
+
+function fillEmSelect(){const s=document.getElementById('em-sel');s.innerHTML=EMOJIS.map(x=>`<option value="${x.e}">${x.e} ${x.l}</option>`).join('')}
 
 async function sync(){if(!db)return;try{const[a,b,c,d]=await Promise.all([db.collection('subjects').get(),db.collection('classes').get(),db.collection('tests').orderBy('createdAt','desc').get(),db.collection('results').orderBy('date','desc').get()]);const s=a.docs.map(x=>({id:x.id,...x.data()}));const cl=b.docs.map(x=>x.data().n||x.data().name);const t=c.docs.map(x=>({id:x.id,...x.data()}));const r=d.docs.map(x=>({id:x.id,...x.data()}));if(s.length)LS.ss(s);if(cl.length)LS.sc(cl);if(t.length)LS.st(t);const x=LS.ld();x.r=r.length?r:(x.r||[]);LS.sv(x)}catch(e){console.log(e)}}
 async function fset(c,i,d){if(!db)return;try{await db.collection(c).doc(i).set(d)}catch(e){}}
@@ -76,7 +114,7 @@ function rd(){const t=LS.gt(),r=LS.gr();document.getElementById('st').textConten
 async function del(i){if(!confirm('Smazat?'))return;LS.dt(i);await fdel('tests',i);rd()}
 
 function rc(){const s=LS.gs(),c=LS.gc();document.getElementById('ls').innerHTML=s.map((x,i)=>`<div class="cm"><span style="font-size:1.2rem">${x.e||x.emoji||'📖'}</span><b style="flex:1">${x.n||x.name}</b><button class="btn btn-bad" style="padding:4px 10px;font-size:.8rem" onclick="rcat('s',${i})">✕</button></div>`).join('');document.getElementById('lc').innerHTML=c.map((x,i)=>`<div class="cm"><b style="flex:1">${x}</b><button class="btn btn-bad" style="padding:4px 10px;font-size:.8rem" onclick="rcat('c',${i})">✕</button></div>`).join('')}
-async function ac(t){if(t=='s'){const n=document.getElementById('ns').value.trim(),e=document.getElementById('ne').value.trim()||'📖';if(!n)return;const x=LS.gs(),id='s'+Date.now();x.push({id,n,e});LS.ss(x);await fset('subjects',id,{n,e});document.getElementById('ns').value='';document.getElementById('ne').value=''}else{const n=document.getElementById('nc').value.trim();if(!n)return;const x=LS.gc();x.push(n);LS.sc(x);await fset('classes','c'+Date.now(),{n});document.getElementById('nc').value=''}rc()}
+async function ac(t){if(t=='s'){const n=document.getElementById('ns').value.trim();if(!n)return;const e=document.getElementById('em-sel').value;const x=LS.gs(),id='s'+Date.now();x.push({id,n,e});LS.ss(x);await fset('subjects',id,{n,e});document.getElementById('ns').value=''}else{const n=document.getElementById('nc').value.trim();if(!n)return;const x=LS.gc();x.push(n);LS.sc(x);await fset('classes','c'+Date.now(),{n});document.getElementById('nc').value=''}rc()}
 function rcat(t,i){if(!confirm('Smazat?'))return;if(t=='s'){const x=LS.gs();x.splice(i,1);LS.ss(x)}else{const x=LS.gc();x.splice(i,1);LS.sc(x)}rc()}
 
 function init(){ed=null;document.getElementById('et').textContent='Nový test';document.getElementById('en').value='';document.getElementById('esh').checked=false;document.getElementById('eq').innerHTML='';const s=LS.gs(),c=LS.gc();document.getElementById('es').innerHTML=s.map(x=>`<option value="${x.id}">${x.e||x.emoji||'📖'} ${x.n||x.name}</option>`).join('');document.getElementById('ec').innerHTML=c.map(x=>`<option>${x}</option>`).join('');aq();aq()}
