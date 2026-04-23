@@ -32,23 +32,31 @@ th{font-size:.7rem;text-transform:uppercase;color:var(--muted)}
 .hide{display:none!important}.c{text-align:center}.s{font-size:.85rem;color:var(--muted)}.mt{margin-top:12px}
 .th{background:var(--paper);border:2px solid var(--b);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.2rem}
 @media(max-width:480px){.row{flex-direction:column}}
+
+/* Emoji picker */
+.em-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px;margin:10px 0}
+.em-btn{padding:10px 4px;background:var(--paper);border:2px solid var(--b);border-radius:var(--r);cursor:pointer;text-align:center;font-size:1.6rem;transition:all .15s}
+.em-btn:hover{border-color:var(--pr);transform:scale(1.1)}
+.em-btn.sel{border-color:var(--pr);background:rgba(67,97,238,.15);box-shadow:0 2px 8px rgba(67,97,238,.2)}
+.em-label{font-size:.7rem;color:var(--muted);margin-top:2px;text-align:center}
 </style>
 </head>
 <body>
 <div class="wrap">
 <div class="header"><h1>👩‍🏫 Školní testy</h1><button class="th" onclick="toggleTheme()">🌓</button></div>
 
-<div id="p-login"><div class="box"><h2 class="c">Přístup pro učitelku</h2><input type="password" id="pw" placeholder="Zadej heslo" style="margin-top:16px" onkeydown="if(event.key==='Enter')check()"><button class="btn btn-pr mt" onclick="check()">Přihlásit</button></div></div>
+<div id="p-login"><div class="box"><h2 class="c">Přístup pro učitelku</h2><p class="c s mt">Heslo: <strong>jakub</strong></p><input type="password" id="pw" placeholder="Heslo" style="margin-top:10px" onkeydown="if(event.key==='Enter')check()"><button class="btn btn-pr mt" onclick="check()">Přihlásit</button></div></div>
 
-<div id="p-dash" class="hide"><div class="c mb"><h2>Přehled</h2><p class="s" id="st">Načítání...</p></div><div class="row mb"><button class="btn btn-ok" onclick="go('new')">+ Test</button><button class="btn btn-war" onclick="go('cats')">Kategorie</button><button class="btn btn-gr" onclick="logout()">Odhlásit</button></div><div id="list"></div></div>
+<div id="p-dash" class="hide"><div class="c mb"><h2>Přehled</h2><span class="s" id="st"></span></div><div class="row mb"><button class="btn btn-ok" onclick="go('new')">+ Test</button><button class="btn btn-war" onclick="go('cats')">Kategorie</button><button class="btn btn-gr" onclick="logout()">Odhlásit</button></div><div id="list"></div></div>
 
 <div id="p-cats" class="hide"><h2 class="c mb">Kategorie</h2>
 <div class="box"><h3 class="mb">Předměty</h3><div id="ls"></div>
 <div class="cm mt"><input id="ns" placeholder="Název předmětu" style="flex:1"></div>
-<label>Vyber ikonku:</label><select id="em-sel" style="margin-bottom:10px"></select>
-<button class="btn btn-pr" onclick="addSubj()">Přidat předmět</button>
+<label>Vyber emoji pro předmět:</label>
+<div class="em-grid" id="em-grid"></div>
+<button class="btn btn-pr" onclick="ac('s')">Přidat předmět</button>
 </div>
-<div class="box"><h3 class="mb">Třídy</h3><div id="lc"></div><div class="cm mt"><input id="nc" placeholder="např. 6. A"><button class="btn btn-pr" onclick="addClass()">+</button></div></div>
+<div class="box"><h3 class="mb">Třídy</h3><div id="lc"></div><div class="cm mt"><input id="nc" placeholder="např. 6. A"><button class="btn btn-pr" onclick="ac('c')">+</button></div></div>
 <button class="btn btn-gr mt" onclick="go('dash')">Zpět</button>
 </div>
 
@@ -60,7 +68,7 @@ th{font-size:.7rem;text-transform:uppercase;color:var(--muted)}
 <script>
 const cfg={apiKey:"AIzaSyCsEtg1GEGDbZDawmLk-sfQfdauHFJaiko",authDomain:"diar-4f2e8.firebaseapp.com",projectId:"diar-4f2e8",storageBucket:"diar-4f2e8.firebasestorage.app",messagingSenderId:"19490498944",appId:"1:19490498944:web:733ab182f3a1e09483f965"};
 const PASS="jakub";
-let db,ed=null,subjects=[],classes=[],tests=[],results=[];
+let db,ed=null,selEmoji='📖';
 
 const EMOJIS=[
 {e:'📐',l:'Matematika'},{e:'🔢',l:'Počty'},{e:'📚',l:'Čeština'},{e:'✍️',l:'Psaní'},
@@ -73,119 +81,53 @@ const EMOJIS=[
 {e:'🎨',l:'Výtvarka'},{e:'🖌️',l:'Malování'},{e:'✏️',l:'Kreslení'},{e:'⚽',l:'Tělocvik'},
 {e:'🏃',l:'Sport'},{e:'🏀',l:'Míčové'},{e:'💻',l:'Informatika'},{e:'🖥️',l:'PC'},
 {e:'⌨️',l:'Programování'},{e:'🔨',l:'Pracovní'},{e:'🪚',l:'Dílna'},{e:'🧵',l:'Ruční práce'},
-{e:'🏠',l:'Rodinná výchova'},{e:'👨‍👩‍👧‍👦',l:'Rodina'},{e:'🍳',l:'Vaření'},{e:'🤝',l:'Etika'},
+{e:'🏠',l:'Rodinná vých.'},{e:'👨‍👩‍👧‍👦',l:'Rodina'},{e:'🍳',l:'Vaření'},{e:'🤝',l:'Etika'},
 {e:'❤️',l:'Charakter'},{e:'🕊️',l:'Mír'},{e:'🎭',l:'Dramatická'},{e:'🎬',l:'Divadlo'},
 {e:'🎪',l:'Herci'},{e:'📖',l:'Čtení'},{e:'📕',l:'Knihy'},{e:'🔖',l:'Čtenářský klub'},
 {e:'🚦',l:'Dopravka'},{e:'🚗',l:'Auto'},{e:'🚲',l:'Kolo'},{e:'💰',l:'Finance'},
 {e:'💳',l:'Ekonomika'},{e:'📈',l:'Byznys'}
 ];
 
-try{firebase.initializeApp(cfg);db=firebase.firestore();console.log("Firebase OK")}catch(e){alert("Firebase chyba: "+e.message)}
+try{firebase.initializeApp(cfg);db=firebase.firestore()}catch(e){alert("Firebase chyba: "+e.message)}
 
-function check(){if(document.getElementById('pw').value===PASS){localStorage.setItem('st_auth','1');loadAndGo('dash')}else{alert('Špatné heslo')}}
+const LS={k:'st_u',ld(){try{return JSON.parse(localStorage.getItem(this.k))||{}}catch(e){return{}}},sv(d){localStorage.setItem(this.k,JSON.stringify(d))},
+gs(){return this.ld().s||[]},ss(s){const d=this.ld();d.s=s;this.sv(d)},gc(){return this.ld().c||[]},sc(c){const d=this.ld();d.c=c;this.sv(d)},
+gt(){return this.ld().t||[]},st(t){const d=this.ld();d.t=t;this.sv(d)},at(t){const x=this.gt();x.push(t);this.st(x)},
+ut(i,d){this.st(this.gt().map(t=>t.id===i?{...t,...d}:t))},dt(i){this.st(this.gt().filter(t=>t.id!==i))},gr(){return this.ld().r||[]}}
+
+function seed(){if(LS.gs().length)return;LS.ss([{id:'mat',n:'Matematika',e:'📐'},{id:'cest',n:'Čeština',e:'📚'},{id:'ang',n:'Angličtina',e:'🇬🇧'}]);LS.sc(['5. A','6. A','7. A'])}
+
+function check(){if(document.getElementById('pw').value===PASS){localStorage.setItem('st_auth','1');go('dash')}else{alert('Špatné heslo')}}
 function logout(){localStorage.removeItem('st_auth');document.getElementById('pw').value='';go('login')}
-function go(p){document.querySelectorAll('[id^="p-"]').forEach(e=>e.classList.add('hide'));document.getElementById('p-'+p).classList.remove('hide');window.scrollTo(0,0)}
-
+function go(p){document.querySelectorAll('[id^="p-"]').forEach(e=>e.classList.add('hide'));document.getElementById('p-'+p).classList.remove('hide');if(p=='dash')rd();if(p=='cats'){rc();renderEmojis()}if(p=='new')init();window.scrollTo(0,0)}
 function toggleTheme(){const h=document.documentElement,t=h.getAttribute('data-theme')=='light'?'dark':'light';h.setAttribute('data-theme',t);localStorage.setItem('theme',t)}
-(function(){const t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);if(localStorage.getItem('st_auth')==='1')loadAndGo('dash')})();
+(function(){const t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);if(localStorage.getItem('st_auth')==='1')go('dash')})();
 
-function fillEmSelect(){const s=document.getElementById('em-sel');s.innerHTML=EMOJIS.map(x=>`<option value="${x.e}">${x.e} ${x.l}</option>`).join('')}
+function renderEmojis(){const g=document.getElementById('em-grid');g.innerHTML=EMOJIS.map(x=>`<div class="em-btn ${selEmoji===x.e?'sel':''}" onclick="pickEm('${x.e}',this)" title="${x.l}"><div>${x.e}</div><div class="em-label">${x.l}</div></div>`).join('')}
+function pickEm(e,el){selEmoji=e;document.querySelectorAll('.em-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel')}
 
-// VŽDY načítá z Firebase
-async function loadAndGo(p){
-    go(p);
-    if(!db)return;
-    try{
-        const[s,c,t,r]=await Promise.all([
-            db.collection('subjects').get(),
-            db.collection('classes').get(),
-            db.collection('tests').orderBy('createdAt','desc').get(),
-            db.collection('results').orderBy('date','desc').get()
-        ]);
-        subjects=s.docs.map(d=>({id:d.id,...d.data()}));
-        classes=c.docs.map(d=>d.data().n||d.data().name);
-        tests=t.docs.map(d=>({id:d.id,...d.data()}));
-        results=r.docs.map(d=>({id:d.id,...d.data()}));
-        if(p=='dash')renderDash();
-        if(p=='cats'){renderCats();fillEmSelect();}
-    }catch(e){console.error(e);document.getElementById('st').textContent='Chyba načítání'}
-}
+async function sync(){if(!db)return;try{const[a,b,c,d]=await Promise.all([db.collection('subjects').get(),db.collection('classes').get(),db.collection('tests').orderBy('createdAt','desc').get(),db.collection('results').orderBy('date','desc').get()]);const s=a.docs.map(x=>({id:x.id,...x.data()}));const cl=b.docs.map(x=>x.data().n||x.data().name);const t=c.docs.map(x=>({id:x.id,...x.data()}));const r=d.docs.map(x=>({id:x.id,...x.data()}));if(s.length)LS.ss(s);if(cl.length)LS.sc(cl);if(t.length)LS.st(t);const x=LS.ld();x.r=r.length?r:(x.r||[]);LS.sv(x)}catch(e){console.log(e)}}
+async function fset(c,i,d){if(!db)return;try{await db.collection(c).doc(i).set(d)}catch(e){}}
+async function fdel(c,i){if(!db)return;try{await db.collection(c).doc(i).delete()}catch(e){}}
 
-function renderDash(){
-    document.getElementById('st').textContent=tests.length+' testů • '+results.length+' vyplnění';
-    document.getElementById('list').innerHTML=tests.length?tests.map(x=>{
-        const v=results.filter(z=>z.testId==x.id);
-        const a=v.length?Math.round(v.reduce((p,q)=>p+q.score,0)/v.length):'-';
-        return`<div class="box"><div style="display:flex;justify-content:space-between"><div><b>${x.title}</b><div class="s mt"><span class="tag bl">${x.subjectName||x.subject}</span><span class="tag">${x.class}</span></div></div><div class="c"><b style="font-size:1.2rem;color:var(--pr)">${a}${a!='-'?'%':''}</b><div class="s">průměr</div></div></div><div class="row mt"><button class="btn btn-pr" onclick="edit('${x.id}')">Upravit</button><button class="btn btn-war" onclick="vres('${x.id}')">Výsledky</button><button class="btn btn-bad" onclick="delTest('${x.id}')">🗑</button></div></div>`
-    }).join(''):'<p class="c s">Zatím nic.</p>';
-}
+function rd(){const t=LS.gt(),r=LS.gr();document.getElementById('st').textContent=t.length+' testů • '+r.length+' vyplnění';document.getElementById('list').innerHTML=t.length?t.map(x=>{const v=r.filter(z=>z.testId==x.id);const a=v.length?Math.round(v.reduce((p,q)=>p+q.score,0)/v.length):'-';return`<div class="box"><div style="display:flex;justify-content:space-between"><div><b>${x.title}</b><div class="s mt"><span class="tag bl">${x.subjectName||x.subject}</span><span class="tag">${x.class}</span></div></div><div class="c"><b style="font-size:1.2rem;color:var(--pr)">${a}${a!='-'?'%':''}</b><div class="s">průměr</div></div></div><div class="row mt"><button class="btn btn-pr" onclick="edit('${x.id}')">Upravit</button><button class="btn btn-war" onclick="vres('${x.id}')">Výsledky</button><button class="btn btn-bad" onclick="del('${x.id}')">🗑</button></div></div>`}).join(''):'<p class="c s">Zatím nic.</p>'}
+async function del(i){if(!confirm('Smazat?'))return;LS.dt(i);await fdel('tests',i);rd()}
 
-async function delTest(id){if(!confirm('Smazat?'))return;try{await db.collection('tests').doc(id).delete();tests=tests.filter(t=>t.id!=id);renderDash()}catch(e){alert('Chyba mazání')}}
+function rc(){const s=LS.gs(),c=LS.gc();document.getElementById('ls').innerHTML=s.map((x,i)=>`<div class="cm"><span style="font-size:1.2rem">${x.e||x.emoji||'📖'}</span><b style="flex:1">${x.n||x.name}</b><button class="btn btn-bad" style="padding:4px 10px;font-size:.8rem" onclick="rcat('s',${i})">✕</button></div>`).join('');document.getElementById('lc').innerHTML=c.map((x,i)=>`<div class="cm"><b style="flex:1">${x}</b><button class="btn btn-bad" style="padding:4px 10px;font-size:.8rem" onclick="rcat('c',${i})">✕</button></div>`).join('')}
+async function ac(t){if(t=='s'){const n=document.getElementById('ns').value.trim();if(!n)return;const x=LS.gs(),id='s'+Date.now();x.push({id,n,e:selEmoji});LS.ss(x);await fset('subjects',id,{n,e:selEmoji});document.getElementById('ns').value='';selEmoji='📖';renderEmojis()}else{const n=document.getElementById('nc').value.trim();if(!n)return;const x=LS.gc();x.push(n);LS.sc(x);await fset('classes','c'+Date.now(),{n});document.getElementById('nc').value=''}rc()}
+function rcat(t,i){if(!confirm('Smazat?'))return;if(t=='s'){const x=LS.gs();x.splice(i,1);LS.ss(x)}else{const x=LS.gc();x.splice(i,1);LS.sc(x)}rc()}
 
-function renderCats(){
-    document.getElementById('ls').innerHTML=subjects.map((x,i)=>`<div class="cm"><span style="font-size:1.2rem">${x.e||x.emoji||'📖'}</span><b style="flex:1">${x.n||x.name}</b><button class="btn btn-bad" style="padding:4px 10px;font-size:.8rem" onclick="delSubj(${i})">✕</button></div>`).join('');
-    document.getElementById('lc').innerHTML=classes.map((x,i)=>`<div class="cm"><b style="flex:1">${x}</b><button class="btn btn-bad" style="padding:4px 10px;font-size:.8rem" onclick="delClass(${i})">✕</button></div>`).join('');
-}
-
-async function addSubj(){
-    const n=document.getElementById('ns').value.trim();if(!n)return;
-    const e=document.getElementById('em-sel').value;
-    const id='s'+Date.now();
-    try{await db.collection('subjects').doc(id).set({n,e});subjects.push({id,n,e});document.getElementById('ns').value='';renderCats()}catch(e){alert('Chyba')}
-}
-async function delSubj(i){if(!confirm('Smazat?'))return;try{await db.collection('subjects').doc(subjects[i].id).delete();subjects.splice(i,1);renderCats()}catch(e){}}
-async function addClass(){
-    const n=document.getElementById('nc').value.trim();if(!n)return;
-    try{await db.collection('classes').doc('c'+Date.now()).set({n});classes.push(n);document.getElementById('nc').value='';renderCats()}catch(e){alert('Chyba')}
-}
-async function delClass(i){if(!confirm('Smazat?'))return;const docs=await db.collection('classes').get();const toDel=docs.docs.find(d=>(d.data().n||d.data().name)==classes[i]);if(toDel)await db.collection('classes').doc(toDel.id).delete();classes.splice(i,1);renderCats()}
-
-function init(){
-    ed=null;document.getElementById('et').textContent='Nový test';document.getElementById('en').value='';document.getElementById('esh').checked=false;document.getElementById('eq').innerHTML='';
-    document.getElementById('es').innerHTML=subjects.map(x=>`<option value="${x.id}">${x.e||x.emoji||'📖'} ${x.n||x.name}</option>`).join('');
-    document.getElementById('ec').innerHTML=classes.map(x=>`<option>${x}</option>`).join('');
-    aq();aq();
-}
-function aq(){
-    const n=document.querySelectorAll('.qb').length;
-    const d=document.createElement('div');d.className='qb';
-    d.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>Otázka ${n+1}</b>${n>0?'<button class="btn btn-bad" style="padding:2px 8px;font-size:.8rem" onclick="this.parentElement.parentElement.remove();rn()">✕</button>':''}</div><input class="qt" placeholder="Text otázky"><div style="margin-top:8px">${[0,1,2,3].map(i=>`<div class="ol"><input type="radio" name="r${n}" value="${i}" ${i==0?'checked':''}><input class="ot" placeholder="${String.fromCharCode(65+i)}"></div>`).join('')}</div>`;
-    document.getElementById('eq').appendChild(d);
-}
+function init(){ed=null;document.getElementById('et').textContent='Nový test';document.getElementById('en').value='';document.getElementById('esh').checked=false;document.getElementById('eq').innerHTML='';const s=LS.gs(),c=LS.gc();document.getElementById('es').innerHTML=s.map(x=>`<option value="${x.id}">${x.e||x.emoji||'📖'} ${x.n||x.name}</option>`).join('');document.getElementById('ec').innerHTML=c.map(x=>`<option>${x}</option>`).join('');aq();aq()}
+function aq(){const n=document.querySelectorAll('.qb').length;const d=document.createElement('div');d.className='qb';d.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>Otázka ${n+1}</b>${n>0?'<button class="btn btn-bad" style="padding:2px 8px;font-size:.8rem" onclick="this.parentElement.parentElement.remove();rn()">✕</button>':''}</div><input class="qt" placeholder="Text otázky"><div style="margin-top:8px">${[0,1,2,3].map(i=>`<div class="ol"><input type="radio" name="r${n}" value="${i}" ${i==0?'checked':''}><input class="ot" placeholder="${String.fromCharCode(65+i)}"></div>`).join('')}</div>`;document.getElementById('eq').appendChild(d)}
 function rn(){document.querySelectorAll('.qb').forEach((b,i)=>{b.querySelector('b').textContent='Otázka '+(i+1);b.querySelectorAll('input[type=radio]').forEach(r=>r.name='r'+i)})}
+function edit(id){const t=LS.gt().find(x=>x.id==id);if(!t)return;ed=id;go('new');document.getElementById('et').textContent='Upravit';document.getElementById('en').value=t.title;document.getElementById('es').value=t.subject;document.getElementById('ec').value=t.class;document.getElementById('esh').checked=t.shuffle||false;document.getElementById('eq').innerHTML='';t.questions.forEach((q,i)=>{const d=document.createElement('div');d.className='qb';d.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>Otázka ${i+1}</b>${i>0?'<button class="btn btn-bad" style="padding:2px 8px;font-size:.8rem" onclick="this.parentElement.parentElement.remove();rn()">✕</button>':''}</div><input class="qt" value="${q.q}"><div style="margin-top:8px">${q.o.map((o,j)=>`<div class="ol"><input type="radio" name="r${i}" value="${j}" ${j==q.a?'checked':''}><input class="ot" value="${o}"></div>`).join('')}</div>`;document.getElementById('eq').appendChild(d)})}
 
-function edit(id){
-    const t=tests.find(x=>x.id==id);if(!t)return;ed=id;go('new');
-    document.getElementById('et').textContent='Upravit';document.getElementById('en').value=t.title;
-    document.getElementById('es').value=t.subject;document.getElementById('ec').value=t.class;
-    document.getElementById('esh').checked=t.shuffle||false;document.getElementById('eq').innerHTML='';
-    t.questions.forEach((q,i)=>{
-        const d=document.createElement('div');d.className='qb';
-        d.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>Otázka ${i+1}</b>${i>0?'<button class="btn btn-bad" style="padding:2px 8px;font-size:.8rem" onclick="this.parentElement.parentElement.remove();rn()">✕</button>':''}</div><input class="qt" value="${q.q}"><div style="margin-top:8px">${q.o.map((o,j)=>`<div class="ol"><input type="radio" name="r${i}" value="${j}" ${j==q.a?'checked':''}><input class="ot" value="${o}"></div>`).join('')}</div>`;
-        document.getElementById('eq').appendChild(d);
-    });
-}
+async function save(){const title=document.getElementById('en').value.trim(),sid=document.getElementById('es').value,cls=document.getElementById('ec').value,sh=document.getElementById('esh').checked,sub=LS.gs().find(s=>s.id==sid);if(!title){alert('Zadej název');return}const qs=[];document.querySelectorAll('.qb').forEach(b=>{const q=b.querySelector('.qt').value.trim(),o=[...b.querySelectorAll('.ot')].map(x=>x.value.trim()),a=parseInt(b.querySelector('input[type=radio]:checked').value);if(!q||o.some(x=>!x)){alert('Vyplň vše');return}qs.push({q,o,a})});const d={id:ed||'t'+Date.now(),title,subject:sid,subjectName:sub?(sub.n||sub.name):sid,class:cls,shuffle:sh,questions:qs,createdAt:Date.now()};if(ed)LS.ut(ed,d);else LS.at(d);await fset('tests',d.id,d);go('dash')}
 
-async function save(){
-    const title=document.getElementById('en').value.trim(),sid=document.getElementById('es').value,cls=document.getElementById('ec').value,sh=document.getElementById('esh').checked,sub=subjects.find(s=>s.id==sid);
-    if(!title){alert('Zadej název');return}
-    const qs=[];document.querySelectorAll('.qb').forEach(b=>{const q=b.querySelector('.qt').value.trim(),o=[...b.querySelectorAll('.ot')].map(x=>x.value.trim()),a=parseInt(b.querySelector('input[type=radio]:checked').value);if(!q||o.some(x=>!x)){alert('Vyplň vše');return}qs.push({q,o,a})});
-    const d={id:ed||'t'+Date.now(),title,subject:sid,subjectName:sub?(sub.n||sub.name):sid,class:cls,shuffle:sh,questions:qs,createdAt:Date.now()};
-    try{
-        await db.collection('tests').doc(d.id).set(d);
-        if(ed){const idx=tests.findIndex(t=>t.id==ed);tests[idx]=d}else{tests.push(d)}
-        go('dash');
-    }catch(e){alert('Chyba ukládání: '+e.message)}
-}
+function vres(id){const t=LS.gt().find(x=>x.id==id),r=LS.gr().filter(x=>x.testId==id).sort((a,b)=>b.date-a.date);document.getElementById('rt').textContent='Výsledky: '+t.title;const b=document.getElementById('tb');if(!r.length){b.innerHTML='';document.getElementById('re').classList.remove('hide')}else{document.getElementById('re').classList.add('hide');b.innerHTML=r.map(x=>`<tr><td>${x.name}</td><td><span class="tag ${x.score>=70?'gr':'bl'}">${x.score}%</span></td><td class="s">${new Date(x.date).toLocaleDateString('cs')}</td></tr>`).join('')}go('res')}
 
-function vres(id){
-    const t=tests.find(x=>x.id==id),r=results.filter(x=>x.testId==id).sort((a,b)=>b.date-a.date);
-    document.getElementById('rt').textContent='Výsledky: '+t.title;
-    const b=document.getElementById('tb');
-    if(!r.length){b.innerHTML='';document.getElementById('re').classList.remove('hide')}
-    else{document.getElementById('re').classList.add('hide');b.innerHTML=r.map(x=>`<tr><td>${x.name}</td><td><span class="tag ${x.score>=70?'gr':'bl'}">${x.score}%</span></td><td class="s">${new Date(x.date).toLocaleDateString('cs')}</td></tr>`).join('')}
-    go('res');
-}
+async function initAll(){seed();await sync()}
+document.readyState=='loading'?document.addEventListener('DOMContentLoaded',initAll):initAll()
 </script>
 </body>
 </html>
